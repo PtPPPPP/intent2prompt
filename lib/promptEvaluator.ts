@@ -8,6 +8,10 @@ function hasChinese(text: string): boolean {
   return /[\u4e00-\u9fa5]/.test(text);
 }
 
+function countMissingPlaceholders(schema: PromptSchema): number {
+  return schema.assumptions?.filter((item) => item.includes("待补充")).length ?? 0;
+}
+
 export function evaluatePrompt(
   promptVersionsOrSchema: PromptVersion[] | PromptSchema,
   maybeSchema?: PromptSchema,
@@ -15,46 +19,54 @@ export function evaluatePrompt(
   const promptVersions = Array.isArray(promptVersionsOrSchema) ? promptVersionsOrSchema : [];
   const schema = maybeSchema ?? (promptVersionsOrSchema as PromptSchema);
   const combinedContent = [schema.role, schema.task, schema.context, schema.input, ...promptVersions.map((v) => v.content)].join("\n");
+  const missingCount = countMissingPlaceholders(schema);
+  const questionCount = schema.clarifyingQuestions?.length ?? 0;
 
   const dimensionScores = {
     taskClarity: clamp(
-      8 + (schema.task.length >= 12 ? 6 : 2) + (schema.input ? 3 : 0) + (schema.role ? 3 : 0),
+      9 +
+        (schema.task.length >= 18 ? 5 : 2) +
+        (schema.input.length >= 16 ? 3 : 1) +
+        (schema.role ? 2 : 0) -
+        (missingCount >= 4 ? 1 : 0),
       EVAL_WEIGHTS.taskClarity,
     ),
     contextCompleteness: clamp(
-      5 +
-        (schema.context.length >= 20 ? 4 : 1) +
-        (schema.assumptions?.length ? 3 : 0) +
-        (schema.clarifyingQuestions?.length ? 3 : 0),
+      6 +
+        (schema.context.length >= 24 ? 3 : 1) +
+        (schema.assumptions?.length ? 2 : 0) +
+        (questionCount ? 2 : 0) -
+        missingCount,
       EVAL_WEIGHTS.contextCompleteness,
     ),
     outputFormatClarity: clamp(
-      4 + schema.outputFormat.length * 2 + (combinedContent.includes("输出格式") ? 3 : 0),
+      5 + Math.min(schema.outputFormat.length, 6) + (combinedContent.includes("输出格式") ? 2 : 0),
       EVAL_WEIGHTS.outputFormatClarity,
     ),
     constraintQuality: clamp(
-      4 +
-        schema.constraints.length * 2 +
-        (schema.constraints.some((item) => item.includes("不要") || item.includes("不能")) ? 3 : 0),
+      5 +
+        Math.min(schema.constraints.length, 5) +
+        (schema.constraints.some((item) => item.includes("不要") || item.includes("不能")) ? 3 : 0) -
+        (missingCount > 3 ? 1 : 0),
       EVAL_WEIGHTS.constraintQuality,
     ),
     executability: clamp(
-      5 +
-        (schema.role ? 2 : 0) +
-        (schema.input ? 2 : 0) +
-        (schema.qualityCriteria.length >= 3 ? 3 : 0) +
-        (promptVersions.length === 3 ? 3 : 0),
+      6 +
+        (schema.qualityCriteria.length >= 4 ? 3 : 2) +
+        (promptVersions.length === 3 ? 3 : 0) +
+        (questionCount < 3 ? 2 : 0) -
+        Math.max(0, missingCount - 2),
       EVAL_WEIGHTS.executability,
     ),
     hallucinationRiskControl: clamp(
-      3 +
+      4 +
         (schema.constraints.some((item) => item.includes("不编造") || item.includes("占位")) ? 3 : 0) +
         (schema.safetyNotes?.length ? 2 : 0) +
-        (schema.assumptions?.length ? 2 : 0),
+        (missingCount <= 2 ? 1 : 0),
       EVAL_WEIGHTS.hallucinationRiskControl,
     ),
     chineseExpressionQuality: clamp(
-      4 + (hasChinese(combinedContent) ? 4 : 0) + (combinedContent.includes("角色") ? 2 : 0),
+      5 + (hasChinese(combinedContent) ? 3 : 0) + (combinedContent.includes("角色") ? 2 : 0),
       EVAL_WEIGHTS.chineseExpressionQuality,
     ),
   };
@@ -64,6 +76,10 @@ export function evaluatePrompt(
 
   if (!schema.clarifyingQuestions?.length) {
     weaknesses.push("缺少追问时，复杂任务可能仍有背景缺口。");
+  }
+
+  if (missingCount >= 4) {
+    weaknesses.push("关键信息缺口较多，建议先补充追问答案。");
   }
 
   if (dimensionScores.hallucinationRiskControl < 8) {

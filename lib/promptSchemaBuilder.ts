@@ -3,7 +3,7 @@ import { getTemplate } from "./templates";
 import type { IntentAnalysis, PromptSchema } from "./types";
 
 function buildMissingInfoAssumptions(missingInfo: string[]): string[] {
-  return missingInfo.slice(0, 4).map((item) => `暂未提供「${item}」，请用【待补充：${item}】标出。`);
+  return missingInfo.map((item) => `暂未提供「${item}」，请用【待补充：${item}】标出。`);
 }
 
 export function buildPromptSchema(

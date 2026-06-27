@@ -31,7 +31,7 @@ const missingRules: Record<TaskType, MissingInfoRule[]> = {
   coding: [
     { label: "项目目标", presentIf: [/目标/, /解决/, /实现/, /生成器/, /系统/, /平台/] },
     { label: "技术栈", presentIf: [/Next|React|Vue|Python|Java|Node|TypeScript|TS/i, /技术栈/] },
-    { label: "拆解粒度", presentIf: [/模块/, /功能/, /任务/, /里程碑/, /拆解/] },
+    { label: "拆解粒度", presentIf: [/模块/, /功能/, /任务/, /里程碑/, /阶段/, /粒度/] },
     { label: "团队规模", presentIf: [/个人/, /团队/, /\d+\s*人/, /分工/] },
     { label: "验收标准", presentIf: [/验收/, /完成标准/, /测试/, /通过/] },
   ],
@@ -49,7 +49,7 @@ const missingRules: Record<TaskType, MissingInfoRule[]> = {
   ],
   data_analysis: [
     { label: "数据来源", presentIf: [/Excel|CSV|数据|报告/i] },
-    { label: "分析目标", presentIf: [/分析/, /目标/, /结论/] },
+    { label: "分析目标", presentIf: [/目标/, /结论/, /想看/, /关注/] },
     { label: "关键指标", presentIf: [/指标/, /转化率/, /增长/, /占比/] },
   ],
   learning: [
@@ -75,14 +75,27 @@ const missingRules: Record<TaskType, MissingInfoRule[]> = {
   ],
 };
 
+const clubActivityRules: MissingInfoRule[] = [
+  { label: "活动主题", presentIf: [/关于/, /主题/, /读书会|分享会|比赛|讲座|沙龙/] },
+  { label: "参与对象", presentIf: [/新生/, /会员/, /同学/, /全校/, /面向/, /对象/] },
+  { label: "时间地点", presentIf: [/时间/, /地点/, /教室/, /线上/, /\d+\s*(月|日|点)/] },
+  { label: "活动流程", presentIf: [/流程/, /环节/, /安排/, /游戏/, /议程/] },
+  { label: "预算与物料", presentIf: [/预算/, /物料/, /奖品/, /费用/, /海报/] },
+  { label: "宣传渠道", presentIf: [/公众号/, /小红书/, /社群/, /海报/, /朋友圈/] },
+];
+
 export function detectMissingInfo(input: string, analysis: IntentAnalysis): string[] {
   const text = input.trim();
-  const rules = missingRules[analysis.taskType] ?? missingRules.other;
+  const isClubActivity = analysis.taskType === "club_operation" && /活动策划|活动方案|活动/.test(text);
+  const rules = isClubActivity ? clubActivityRules : missingRules[analysis.taskType] ?? missingRules.other;
   const template = getTemplate(analysis.taskType);
   const ruleLabels = rules
     .filter((rule) => !rule.presentIf.some((pattern) => pattern.test(text)))
     .map((rule) => rule.label);
 
-  const templateMissing = template.requiredInfo.filter((item) => !text.includes(item));
+  const ruleLabelSet = new Set(rules.map((rule) => rule.label));
+  const templateMissing = isClubActivity
+    ? []
+    : template.requiredInfo.filter((item) => !ruleLabelSet.has(item) && !text.includes(item));
   return [...new Set([...ruleLabels, ...templateMissing])].slice(0, 6);
 }

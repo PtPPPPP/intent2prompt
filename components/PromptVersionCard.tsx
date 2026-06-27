@@ -9,11 +9,19 @@ interface PromptVersionCardProps {
 
 export function PromptVersionCard({ version }: PromptVersionCardProps) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(version.content);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    try {
+      await navigator.clipboard.writeText(version.content);
+      setCopyFailed(false);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 1800);
+    }
   }
 
   return (
@@ -28,7 +36,7 @@ export function PromptVersionCard({ version }: PromptVersionCardProps) {
           onClick={handleCopy}
           className="rounded-md border border-line px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-accent hover:text-accent"
         >
-          {copied ? "已复制" : "复制"}
+          {copyFailed ? "复制失败" : copied ? "已复制" : "复制"}
         </button>
       </div>
       <pre className="mt-4 max-h-[460px] overflow-auto whitespace-pre-wrap rounded-md bg-slate-950 p-4 text-sm leading-6 text-slate-100">

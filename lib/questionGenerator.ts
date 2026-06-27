@@ -11,6 +11,12 @@ const questionMap: Record<string, string> = {
   发布平台: "发在哪个平台？",
   文案风格: "希望什么风格？",
   报名方式: "如何报名加入？",
+  活动主题: "活动主题是什么？",
+  参与对象: "主要谁来参加？",
+  时间地点: "时间地点确定了吗？",
+  活动流程: "需要哪些活动环节？",
+  预算与物料: "有预算或物料要求吗？",
+  宣传渠道: "通过哪些渠道宣传？",
   论文标题或材料: "论文材料有吗？",
   学科领域: "属于哪个领域？",
   总结用途: "用于汇报还是精读？",
@@ -34,7 +40,7 @@ const questionMap: Record<string, string> = {
 
 const taskOpening: Partial<Record<IntentAnalysis["taskType"], string>> = {
   project_planning: "为提高项目材料质量，",
-  club_operation: "为让文案更适合发布，",
+  club_operation: "为让社团内容更可执行，",
   academic_paper: "为避免论文总结失真，",
   coding: "为让开发任务更可执行，",
   survey: "为让问卷更可分析，",

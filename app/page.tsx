@@ -92,7 +92,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ intent: trimmedIntent }),
+        body: JSON.stringify({ input: trimmedIntent }),
       });
       const data = (await response.json()) as GeneratePromptResult | { error: string };
 

@@ -40,12 +40,12 @@ export const exampleCases: ExampleIntent[] = [
   {
     input: "帮我生成一份社团活动策划案",
     expectedTaskType: "club_operation",
-    expectedMissingInfo: ["目标人群", "发布平台", "文案风格"],
+    expectedMissingInfo: ["活动主题", "参与对象", "时间地点"],
   },
   {
     input: "帮我把课程知识点整理成复习提纲",
     expectedTaskType: "learning",
-    expectedMissingInfo: ["学习阶段", "薄弱点"],
+    expectedMissingInfo: ["薄弱点", "考试形式"],
   },
   {
     input: "帮我分析一份数据报告",

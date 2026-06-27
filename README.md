@@ -1,100 +1,136 @@
 # Intent2Prompt
 
-Intent2Prompt 不是简单的提示词美化工具，而是一个面向中文学生创新场景的“意图到提示词编译器”。系统通过意图解析、缺失信息检测、结构化 Prompt 编译、质量评估和提示词资产管理，降低普通用户使用 AI 的表达门槛。
+> 把一句模糊的中文意图，「编译」成可直接喂给大模型的高质量 Prompt。
 
-## 核心功能
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-- 输入一句中文短意图，例如“帮我写一个挑战杯项目计划书”
-- 自动识别任务类型
-- 检测关键缺失信息
-- 生成最多 3 个追问
-- 编译 3 个 Prompt 版本：简洁版、专家版、比赛/项目版
-- 展示 Prompt 质量评分
-- 支持一键复制
-- 使用 localStorage 保存简单历史记录
-- 默认规则 + mock 流程，无需真实 API key
+仓库地址：https://github.com/PtPPPPP/intent2prompt
 
-## 技术栈
+Intent2Prompt 不是简单的提示词美化工具，而是一个面向中文学生创新场景的「意图到提示词编译器」。系统通过 **意图解析 → 缺失信息检测 → 澄清追问 → 结构化 Prompt 编译 → 质量评估** 的完整闭环，降低普通用户使用 AI 的表达门槛。
 
-- Next.js
-- TypeScript
-- Tailwind CSS
-- Next.js API Routes
-- Vitest
-- 浏览器 localStorage
+输入一句中文短意图（例如「帮我写一个挑战杯项目计划书」），即可获得 3 个不同风格的 Prompt 版本 + 7 维度质量评分，**开箱即用、无需任何 API Key**（默认走 mock 流程）。
 
-## 目录结构
+## ✨ 核心功能
 
-```text
-app/
-  page.tsx
-  api/generate/route.ts
-components/
-  IntentInput.tsx
-  IntentAnalysisCard.tsx
-  ClarifyingQuestions.tsx
-  PromptVersionCard.tsx
-  HistoryPanel.tsx
-  EvaluationCard.tsx
-lib/
-  types.ts
-  intentRules.ts
-  templates.ts
-  intentAnalyzer.ts
-  missingInfoDetector.ts
-  questionGenerator.ts
-  promptSchemaBuilder.ts
-  promptCompiler.ts
-  promptEvaluator.ts
-  llmClient.ts
-data/
-  examples.ts
-docs/
-  项目立项书.md
-```
+- 🎯 **意图识别**：自动判定任务类型（挑战杯、社团招新、论文、编程、问卷…共 11 类）
+- 🔍 **缺失信息检测**：识别关键缺漏，生成最多 3 条澄清追问
+- 🛠 **多版本编译**：一键产出「简洁版 / 专家版 / 比赛·项目版」3 套 Prompt
+- 📊 **质量评分**：7 维度 100 分制规则评分，附优缺点与改进建议
+- 📋 **一键复制** & **本地历史**：基于 localStorage，无需登录
+- 🔌 **可选 LLM**：默认 mock 零配置；支持接入 DeepSeek 进行真实润色
 
-## 本地运行
+## 🚀 快速开始
+
+### 环境要求
+
+- Node.js ≥ 18（建议 20+）
+- npm
+
+### 安装与运行
 
 ```bash
+git clone https://github.com/PtPPPPP/intent2prompt.git
+cd intent2prompt
 npm install
 npm run dev
 ```
 
-打开：
+浏览器打开 http://localhost:3000 即可使用。
 
-```text
-http://localhost:3000
-```
+> 💡 默认 `LLM_PROVIDER=mock`，开箱即用，无需任何 API Key。
 
-## 常用命令
+### 启用真实 LLM（可选）
+
+复制配置模板并填入 Key：
 
 ```bash
-npm test
-npm run lint
-npm run build
+cp .env.example .env.local
 ```
 
-## 环境变量
+编辑 `.env.local`：
 
-复制 `.env.example` 为 `.env.local`：
+```env
+LLM_PROVIDER=deepseek                       # 可选：mock（默认）或 deepseek
+DEEPSEEK_API_KEY=sk-xxxxxxxx                # 在 DeepSeek 平台申请
+DEEPSEEK_MODEL=deepseek-chat                # 可选，默认 deepseek-chat
+DEEPSEEK_BASE_URL=https://api.deepseek.com  # 可选，可指向自建网关/代理
+```
+
+> ⚠️ OpenAI / Claude provider 目前为占位，**尚未接入**；如设置 `LLM_PROVIDER=openai|claude`，运行时会抛出明确提示。后续按相同接口约定扩展即可。
+
+## 🔧 常用命令
+
+| 命令 | 说明 |
+| --- | --- |
+| `npm run dev` | 启动开发服务器 |
+| `npm run build` | 生产构建 |
+| `npm run start` | 以生产模式启动 |
+| `npm test` | 运行 Vitest 单元测试 |
+| `npm run lint` | ESLint 代码检查 |
+
+## 🧰 技术栈
+
+| 类别 | 技术 |
+| --- | --- |
+| 框架 | Next.js 16（App Router） |
+| 语言 | TypeScript 5 |
+| UI | React 19、Tailwind CSS 3 |
+| 后端 | Next.js Route Handlers |
+| 测试 | Vitest |
+| 存储 | 浏览器 localStorage |
+
+## 📁 目录结构
 
 ```text
-LLM_PROVIDER=mock
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
+app/
+  page.tsx                      主页面（输入 + 结果展示）
+  api/generate/route.ts         生成接口
+  layout.tsx / globals.css
+components/                     UI 组件
+  IntentInput.tsx               意图输入
+  IntentAnalysisCard.tsx        意图解析卡片
+  ClarifyingQuestions.tsx       澄清追问
+  PromptVersionCard.tsx         Prompt 版本卡片
+  EvaluationCard.tsx            质量评分卡片
+  HistoryPanel.tsx              历史记录
+lib/                            核心逻辑（纯函数，便于单测）
+  types.ts                      类型定义
+  intentRules.ts                11 类任务规则
+  templates.ts                  Prompt 模板
+  intentAnalyzer.ts             意图解析 + 流程编排
+  missingInfoDetector.ts        缺失信息检测
+  questionGenerator.ts          追问生成
+  promptSchemaBuilder.ts        结构化 Schema 构建
+  promptCompiler.ts             3 模式 Prompt 编译
+  promptEvaluator.ts            7 维度评分
+  llmClient.ts                  统一 LLM 入口（mock / deepseek）
+data/
+  examples.ts                   10 条中文测试样例
+docs/
+  项目立项书.md                  项目设计文档
 ```
 
-当前主流程不依赖真实 LLM。`lib/llmClient.ts` 保留统一入口，后续可接入 OpenAI、Claude 或兼容 OpenAI 协议的模型服务。
+## 🔄 工作流程
 
-## API 契约
-
-接口：
-
-```text
-POST /api/generate
+```mermaid
+flowchart LR
+  A[用户输入] --> B[analyzeIntent<br/>意图解析]
+  B --> C[detectMissingInfo<br/>缺失信息检测]
+  C --> D[generateClarifyingQuestions<br/>澄清追问]
+  D --> E[buildPromptSchema<br/>结构化骨架]
+  E --> F[compilePromptVersions<br/>3 模式编译]
+  F --> G[evaluatePrompt<br/>7 维度评分]
+  G --> H[返回结果]
 ```
 
-请求体支持新字段 `input`，也兼容旧字段 `intent`：
+## 📡 API 契约
+
+### `POST /api/generate`
+
+**请求体**
 
 ```json
 {
@@ -102,26 +138,34 @@ POST /api/generate
 }
 ```
 
-返回：
+> 兼容旧字段 `intent`（`input` 与 `intent` 任填其一）。输入为空时返回 `400`。
+
+**响应**（`GeneratePromptResult`）
 
 ```ts
-GeneratePromptResult
+{
+  originalInput: string;          // 原始输入
+  analysis: IntentAnalysis;       // 任务类型 / 目标 / 已知与缺失信息 / 置信度
+  clarifyingQuestions: string[];  // 最多 3 条澄清追问
+  promptSchema: PromptSchema;     // 结构化提示词骨架
+  promptVersions: PromptVersion[];// concise / expert / competition 三个版本
+  evaluation: PromptEvaluation;   // 总分 + 7 维度明细 + 优缺点与建议
+}
 ```
 
-流程：
+7 个评分维度及权重（满分 100）：
 
-```text
-用户输入
--> analyzeIntent
--> detectMissingInfo
--> generateClarifyingQuestions
--> buildPromptSchema
--> compilePromptVersions
--> evaluatePrompt
--> 返回结果
-```
+| 维度 | 权重 |
+| --- | --- |
+| taskClarity（任务清晰度） | 20 |
+| contextCompleteness（上下文完整性） | 15 |
+| outputFormatClarity（输出格式清晰度） | 15 |
+| constraintQuality（约束质量） | 15 |
+| executability（可执行性） | 15 |
+| hallucinationRiskControl（幻觉风险控制） | 10 |
+| chineseExpressionQuality（中文表达质量） | 10 |
 
-## MVP 当前能力
+## 🎯 MVP 当前能力
 
 已覆盖以下任务类型：
 
@@ -136,11 +180,19 @@ GeneratePromptResult
 - 商业计划书
 - 通用写作和其他任务
 
-`data/examples.ts` 内置 10 条中文测试样例，并标注期望任务类型和关键缺失信息。
+`data/examples.ts` 内置 10 条中文测试样例，并标注期望任务类型与关键缺失信息。
 
-## Claude 设计整合情况
+## 🧪 测试
 
-完整采用：
+```bash
+npm test
+```
+
+基于 `data/examples.ts` 中的样例对意图识别、缺失信息检测等核心纯函数进行单元测试。
+
+## 🧠 Claude 设计整合情况
+
+**完整采用：**
 
 - 8 模块闭环思路
 - `PromptSchema` 核心字段
@@ -150,15 +202,24 @@ GeneratePromptResult
 - 7 维度 100 分规则评分
 - 10 条测试样例方向
 
-简化处理：
+**简化处理：**
 
-- `MissingField` 和 `ClarifyingQuestion` 未做成复杂对象，MVP 先用字符串数组，方便前端展示和复制。
-- LLM 只保留统一入口，不参与主流程，避免没有 API key 时影响演示。
-- 评分器使用规则评分，不做语义级模型评审。
+- `MissingField` 和 `ClarifyingQuestion` 未做成复杂对象，MVP 先用字符串数组，方便前端展示与复制。
+- LLM 仅保留统一入口，主流程不依赖真实模型，避免没有 API Key 时影响演示。
+- 评分器使用规则评分，暂不做语义级模型评审。
 
-## 后续开发方向
+## 🗺 后续开发方向
 
-- 增加用户填写追问答案后的二次生成
+- 支持用户填写追问答案后的二次生成
 - 把历史记录从 localStorage 升级为 SQLite
-- 让真实 LLM 只在低置信度或润色阶段介入
+- 让真实 LLM 仅在低置信度或润色阶段介入
 - 扩展更多学生场景模板
+- 接入 OpenAI / Claude provider
+
+## 🤝 贡献
+
+欢迎提 Issue 与 PR。请确保 `npm test` 与 `npm run lint` 通过。
+
+## 📄 许可
+
+[MIT](LICENSE)

@@ -6,6 +6,7 @@ import { buildPromptSchema } from "@/lib/promptSchemaBuilder";
 import { compilePromptVersions } from "@/lib/promptCompiler";
 import { evaluatePrompt } from "@/lib/promptEvaluator";
 import { EVAL_WEIGHTS } from "@/lib/types";
+import { exampleCases } from "@/data/examples";
 
 describe("generatePromptPackage", () => {
   it("turns a short Challenge Cup intent into a complete prompt package", async () => {
@@ -76,5 +77,26 @@ describe("generatePromptPackage", () => {
       Object.values(evaluation.dimensionScores).reduce((total, score) => total + score, 0),
     );
     expect(EVAL_WEIGHTS.taskClarity).toBe(20);
+  });
+
+  it("supports all 10 demo examples with useful prompt outputs", async () => {
+    const results = [];
+
+    for (const example of exampleCases) {
+      const result = await generatePromptPackage(example.input);
+      results.push(result);
+
+      expect(result.analysis.taskType).toBe(example.expectedTaskType);
+      expect(result.analysis.missingInfo).toEqual(
+        expect.arrayContaining(example.expectedMissingInfo),
+      );
+      expect(result.clarifyingQuestions.length).toBeLessThanOrEqual(3);
+      expect(result.promptVersions).toHaveLength(3);
+      expect(new Set(result.promptVersions.map((version) => version.content)).size).toBe(3);
+      expect(result.evaluation.score).toBeGreaterThanOrEqual(70);
+    }
+
+    const scores = results.map((result) => result.evaluation.score);
+    expect(Math.max(...scores) - Math.min(...scores)).toBeGreaterThanOrEqual(4);
   });
 });

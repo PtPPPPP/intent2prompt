@@ -4,6 +4,16 @@ interface EvaluationCardProps {
   evaluation: PromptEvaluation;
 }
 
+const dimensionLabels: Record<keyof PromptEvaluation["dimensionScores"], string> = {
+  taskClarity: "任务清晰度",
+  contextCompleteness: "背景完整度",
+  outputFormatClarity: "输出格式清晰度",
+  constraintQuality: "约束质量",
+  executability: "可执行性",
+  hallucinationRiskControl: "防编造控制",
+  chineseExpressionQuality: "中文表达质量",
+};
+
 export function EvaluationCard({ evaluation }: EvaluationCardProps) {
   return (
     <section className="rounded-lg border border-line bg-white p-5 shadow-soft">
@@ -21,7 +31,9 @@ export function EvaluationCard({ evaluation }: EvaluationCardProps) {
       <div className="mt-4 grid gap-2 md:grid-cols-2">
         {Object.entries(evaluation.dimensionScores).map(([key, value]) => (
           <div key={key} className="flex items-center justify-between rounded-md bg-cloud px-3 py-2">
-            <span className="text-sm text-slate-600">{key}</span>
+            <span className="text-sm text-slate-600">
+              {dimensionLabels[key as keyof PromptEvaluation["dimensionScores"]]}
+            </span>
             <span className="text-sm font-semibold">{value}</span>
           </div>
         ))}
