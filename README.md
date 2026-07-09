@@ -20,7 +20,7 @@ Intent2Prompt 不是简单的提示词美化工具，而是一个面向中文学
 - 🛠 **多版本编译**：一键产出「简洁版 / 专家版 / 比赛·项目版」3 套 Prompt
 - 📊 **质量评分**：7 维度 100 分制规则评分，附优缺点与改进建议
 - 📋 **一键复制** & **本地历史**：基于 localStorage，无需登录
-- 🔌 **可选 LLM**：默认 mock 零配置；支持接入 DeepSeek 进行真实润色
+- 🔌 **LLM 预留入口**：默认规则 / 模板 / mock 链路；已预留 DeepSeek 调用函数，但主生成流程默认不调用真实模型
 
 ## 🚀 快速开始
 
@@ -42,9 +42,11 @@ npm run dev
 
 > 💡 默认 `LLM_PROVIDER=mock`，开箱即用，无需任何 API Key。
 
-### 启用真实 LLM（可选）
+### LLM 接口状态
 
-复制配置模板并填入 Key：
+当前主生成流程是规则 / 模板 / mock 链路，不需要 API Key 也可以完整运行。项目已在 `lib/llmClient.ts` 中预留统一 LLM 入口，并实现了 DeepSeek 调用函数，但 `lib/intentAnalyzer.ts` 的主流程默认不调用 DeepSeek。
+
+后续可以把真实 LLM 用于低置信度意图增强、追问润色或 Prompt 优化。需要单独测试 LLM 入口时，可复制配置模板并填入 Key：
 
 ```bash
 cp .env.example .env.local
@@ -53,13 +55,13 @@ cp .env.example .env.local
 编辑 `.env.local`：
 
 ```env
-LLM_PROVIDER=deepseek                       # 可选：mock（默认）或 deepseek
+LLM_PROVIDER=deepseek                       # 仅用于显式调用 llmClient，不会自动改变主生成流程
 DEEPSEEK_API_KEY=sk-xxxxxxxx                # 在 DeepSeek 平台申请
 DEEPSEEK_MODEL=deepseek-chat                # 可选，默认 deepseek-chat
 DEEPSEEK_BASE_URL=https://api.deepseek.com  # 可选，可指向自建网关/代理
 ```
 
-> ⚠️ OpenAI / Claude provider 目前为占位，**尚未接入**；如设置 `LLM_PROVIDER=openai|claude`，运行时会抛出明确提示。后续按相同接口约定扩展即可。
+> ⚠️ OpenAI / Claude provider 目前为占位，**尚未接入**；DeepSeek 入口已存在但未接入主生成流程。不要把 `LLM_PROVIDER=deepseek` 理解为页面生成会自动调用 DeepSeek。
 
 ## 🔧 常用命令
 

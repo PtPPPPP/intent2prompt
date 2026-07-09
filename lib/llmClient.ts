@@ -1,5 +1,7 @@
 export type LLMProvider = "mock" | "openai" | "claude" | "deepseek";
 
+// 统一 LLM 入口当前是预留能力；MVP 主生成流程默认不调用真实模型。
+
 /**
  * 调用 DeepSeek（OpenAI 兼容）聊天补全接口。
  * 文档：https://api-docs.deepseek.com/

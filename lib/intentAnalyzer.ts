@@ -81,6 +81,7 @@ export function analyzeIntent(input: string): IntentAnalysis {
   };
 }
 
+// MVP 主链路保持规则 / 模板生成，避免没有 API key 时影响完整演示。
 export async function generatePromptPackage(input: string): Promise<GeneratePromptResult> {
   const originalInput = input.trim();
   const analysis = analyzeIntent(originalInput);

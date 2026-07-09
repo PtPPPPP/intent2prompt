@@ -8,15 +8,9 @@ import { IntentAnalysisCard } from "@/components/IntentAnalysisCard";
 import { IntentInput } from "@/components/IntentInput";
 import { PromptVersionCard } from "@/components/PromptVersionCard";
 import { exampleIntents } from "@/data/examples";
+import { historyEvent, historyKey, parseHistory, type HistoryItem } from "@/lib/history";
 import type { GeneratePromptResult } from "@/lib/types";
 
-interface HistoryItem {
-  input: string;
-  createdAt: string;
-}
-
-const historyKey = "intent2prompt-history-v1";
-const historyEvent = "intent2prompt-history-change";
 const emptyHistory: HistoryItem[] = [];
 let cachedHistoryRaw: string | null = null;
 let cachedHistory: HistoryItem[] = emptyHistory;
@@ -37,16 +31,14 @@ function readHistory(): HistoryItem[] {
     return cachedHistory;
   }
 
-  try {
-    cachedHistoryRaw = rawHistory;
-    cachedHistory = JSON.parse(rawHistory) as HistoryItem[];
-    return cachedHistory;
-  } catch {
+  const parsedHistory = parseHistory(rawHistory);
+  if (!parsedHistory.length && rawHistory !== "[]") {
     window.localStorage.removeItem(historyKey);
-    cachedHistoryRaw = null;
-    cachedHistory = emptyHistory;
-    return cachedHistory;
   }
+
+  cachedHistoryRaw = rawHistory;
+  cachedHistory = parsedHistory;
+  return cachedHistory;
 }
 
 function subscribeToHistory(onStoreChange: () => void) {
