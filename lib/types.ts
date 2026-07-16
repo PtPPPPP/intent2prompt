@@ -13,6 +13,8 @@ export type TaskType =
 
 export type PromptMode = "concise" | "expert" | "competition";
 
+export type ProviderStatus = "mock" | "deepseek" | "fallback";
+
 export interface IntentRule {
   taskType: TaskType;
   label: string;
@@ -78,6 +80,8 @@ export interface GeneratePromptResult {
   promptSchema: PromptSchema;
   promptVersions: PromptVersion[];
   evaluation: PromptEvaluation;
+  providerStatus: ProviderStatus;
+  providerMessage?: string;
 }
 
 export interface PromptTemplate {

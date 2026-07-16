@@ -9,6 +9,8 @@ interface IntentInputProps {
   onSubmit: () => void;
 }
 
+const MAX_INPUT_LENGTH = 1000;
+
 export function IntentInput({
   value,
   examples,
@@ -26,9 +28,13 @@ export function IntentInput({
         id="intent"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        maxLength={MAX_INPUT_LENGTH}
         placeholder="例如：帮我写一个挑战杯项目计划书"
         className="mt-3 min-h-32 w-full resize-y rounded-md border border-line bg-cloud p-4 text-base leading-7 outline-none transition focus:border-accent focus:bg-white"
       />
+      <p className="mt-2 text-right text-xs text-slate-500">
+        {value.length} / {MAX_INPUT_LENGTH}
+      </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {examples.map((example) => (
           <button

@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { ClarifyingQuestions } from "@/components/ClarifyingQuestions";
 import { EvaluationCard } from "@/components/EvaluationCard";
 import { HistoryPanel } from "@/components/HistoryPanel";
 import { IntentAnalysisCard } from "@/components/IntentAnalysisCard";
 import { IntentInput } from "@/components/IntentInput";
 import { PromptVersionCard } from "@/components/PromptVersionCard";
+import { FeedbackPanel } from "@/components/FeedbackPanel";
 import { exampleIntents } from "@/data/examples";
 import { historyEvent, historyKey, parseHistory, type HistoryItem } from "@/lib/history";
 import type { GeneratePromptResult } from "@/lib/types";
 
 const emptyHistory: HistoryItem[] = [];
+const DUPLICATE_SUBMISSION_WINDOW_MS = 3_000;
+const anonymousClientKey = "intent2prompt-anonymous-client-id";
 let cachedHistoryRaw: string | null = null;
 let cachedHistory: HistoryItem[] = emptyHistory;
 
@@ -20,7 +23,8 @@ function readHistory(): HistoryItem[] {
     return emptyHistory;
   }
 
-  const rawHistory = window.localStorage.getItem(historyKey);
+  let rawHistory: string | null;
+  try { rawHistory = window.localStorage.getItem(historyKey); } catch { return emptyHistory; }
   if (!rawHistory) {
     cachedHistoryRaw = null;
     cachedHistory = emptyHistory;
@@ -47,8 +51,18 @@ function subscribeToHistory(onStoreChange: () => void) {
 }
 
 function writeHistory(history: HistoryItem[]) {
-  window.localStorage.setItem(historyKey, JSON.stringify(history));
+  try { window.localStorage.setItem(historyKey, JSON.stringify(history)); } catch { return; }
   window.dispatchEvent(new Event(historyEvent));
+}
+
+function getAnonymousClientId(): string {
+  try {
+    const existing = window.localStorage.getItem(anonymousClientKey);
+    if (existing) return existing;
+  } catch { return crypto.randomUUID(); }
+  const id = crypto.randomUUID();
+  try { window.localStorage.setItem(anonymousClientKey, id); } catch { return id; }
+  return id;
 }
 
 export default function Home() {
@@ -57,6 +71,8 @@ export default function Home() {
   const history = useSyncExternalStore(subscribeToHistory, readHistory, () => emptyHistory);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const requestInFlightRef = useRef(false);
+  const lastCompletedSubmissionRef = useRef<{ input: string; completedAt: number } | null>(null);
 
   function saveHistory(input: string) {
     const nextHistory = [
@@ -75,7 +91,21 @@ export default function Home() {
       return;
     }
 
+    if (requestInFlightRef.current) {
+      return;
+    }
+
+    const lastSubmission = lastCompletedSubmissionRef.current;
+    if (
+      lastSubmission?.input === trimmedIntent &&
+      Date.now() - lastSubmission.completedAt < DUPLICATE_SUBMISSION_WINDOW_MS
+    ) {
+      setError("相同内容刚刚生成过，请稍后再试。");
+      return;
+    }
+
     setError("");
+    requestInFlightRef.current = true;
     setIsLoading(true);
 
     try {
@@ -83,26 +113,31 @@ export default function Home() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-anonymous-client-id": getAnonymousClientId(),
         },
         body: JSON.stringify({ input: trimmedIntent }),
       });
-      const data = (await response.json()) as GeneratePromptResult | { error: string };
+      const data = (await response.json()) as GeneratePromptResult | { error: string; message?: string; requestId?: string; retryAfter?: number };
 
       if (!response.ok || "error" in data) {
-        throw new Error("error" in data ? data.error : "生成失败。");
+        if ("error" in data && response.status === 429) throw new Error(`请求过于频繁，请 ${data.retryAfter ?? 0} 秒后再试。${data.requestId ? ` 请求编号：${data.requestId}` : ""}`);
+        if ("error" in data && response.status === 503) throw new Error(`服务暂时不可用，请稍后重试。${data.requestId ? ` 请求编号：${data.requestId}` : ""}`);
+        throw new Error("error" in data ? `${data.message ?? data.error}${data.requestId ? ` 请求编号：${data.requestId}` : ""}` : "生成失败。");
       }
 
       setResult(data);
       saveHistory(trimmedIntent);
+      lastCompletedSubmissionRef.current = { input: trimmedIntent, completedAt: Date.now() };
     } catch (generateError) {
       setError(generateError instanceof Error ? generateError.message : "生成失败。");
     } finally {
+      requestInFlightRef.current = false;
       setIsLoading(false);
     }
   }
 
   function clearHistory() {
-    window.localStorage.removeItem(historyKey);
+    try { window.localStorage.removeItem(historyKey); } catch { return; }
     window.dispatchEvent(new Event(historyEvent));
   }
 
@@ -137,6 +172,22 @@ export default function Home() {
 
             {result ? (
               <>
+                <div
+                  className={`rounded-lg border p-4 text-sm ${
+                    result.providerStatus === "deepseek"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : result.providerStatus === "fallback"
+                        ? "border-amber-200 bg-amber-50 text-amber-800"
+                        : "border-slate-200 bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  {result.providerStatus === "deepseek"
+                    ? "当前结果：DeepSeek 增强模式"
+                    : result.providerStatus === "fallback"
+                      ? "当前结果：已降级为规则模式"
+                      : "当前结果：规则模式"}
+                  {result.providerMessage ? `（${result.providerMessage}）` : ""}
+                </div>
                 <IntentAnalysisCard analysis={result.analysis} />
                 <ClarifyingQuestions questions={result.clarifyingQuestions} />
                 <EvaluationCard evaluation={result.evaluation} />
@@ -145,6 +196,7 @@ export default function Home() {
                     <PromptVersionCard key={version.mode} version={version} />
                   ))}
                 </section>
+                <FeedbackPanel requestId={(result as GeneratePromptResult & { requestId: string }).requestId} taskType={result.analysis.taskType} />
               </>
             ) : (
               <section className="rounded-lg border border-dashed border-line bg-white p-8 text-center text-slate-500">

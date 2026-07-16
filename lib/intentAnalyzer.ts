@@ -6,6 +6,7 @@ import { evaluatePrompt } from "./promptEvaluator";
 import { getTemplate, getTemplateByInput } from "./templates";
 import type { GeneratePromptResult, IntentAnalysis, TaskType } from "./types";
 import { generateClarifyingQuestions } from "./questionGenerator";
+import { enhancePromptVersions } from "./llmClient";
 
 function inferTaskType(input: string): { taskType: TaskType; confidence: number } {
   const ruleResult = classifyIntentByRules(input);
@@ -89,15 +90,18 @@ export async function generatePromptPackage(input: string): Promise<GenerateProm
   const completedAnalysis = { ...analysis, missingInfo };
   const clarifyingQuestions = generateClarifyingQuestions(missingInfo, completedAnalysis);
   const promptSchema = buildPromptSchema(originalInput, completedAnalysis, clarifyingQuestions);
-  const promptVersions = compilePromptVersions(promptSchema);
-  const evaluation = evaluatePrompt(promptVersions, promptSchema);
+  const rulePromptVersions = compilePromptVersions(promptSchema);
+  const providerResult = await enhancePromptVersions(rulePromptVersions);
+  const evaluation = evaluatePrompt(providerResult.promptVersions, promptSchema);
 
   return {
     originalInput,
     analysis: completedAnalysis,
     clarifyingQuestions,
     promptSchema,
-    promptVersions,
+    promptVersions: providerResult.promptVersions,
     evaluation,
+    providerStatus: providerResult.providerStatus,
+    providerMessage: providerResult.providerMessage,
   };
 }
