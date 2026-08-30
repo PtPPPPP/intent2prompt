@@ -14,6 +14,9 @@ import { getAnonymousClientId } from "@/lib/anonymousClientId";
 import { historyEvent, historyKey, parseHistory, type HistoryItem } from "@/lib/history";
 import type { GeneratePromptResult, PromptPackageMode, TargetTool } from "@/lib/types";
 
+// requestId 由 apiSuccess 统一注入响应体，不属于领域结果类型
+type GenerateResponse = GeneratePromptResult & { requestId: string };
+
 const emptyHistory: HistoryItem[] = [];
 const DUPLICATE_SUBMISSION_WINDOW_MS = 3_000;
 let cachedHistoryRaw: string | null = null;
@@ -47,7 +50,7 @@ export default function Home() {
   const [targetTool, setTargetTool] = useState<TargetTool>("auto");
   const [packageMode, setPackageMode] = useState<PromptPackageMode>("auto");
   const [clarificationAnswers, setClarificationAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<GeneratePromptResult | null>(null);
+  const [result, setResult] = useState<GenerateResponse | null>(null);
   const history = useSyncExternalStore(subscribeToHistory, readHistory, () => emptyHistory);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +81,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json", "x-anonymous-client-id": getAnonymousClientId() },
         body: JSON.stringify({ input: trimmedIntent, targetTool, packageMode, clarificationAnswers }),
       });
-      const data = (await response.json()) as GeneratePromptResult | { error: string; message?: string; requestId?: string; retryAfter?: number };
+      const data = (await response.json()) as GenerateResponse | { error: string; message?: string; requestId?: string; retryAfter?: number };
       if (!response.ok || "error" in data) {
         if ("error" in data && response.status === 429) throw new Error(`请求过于频繁，请 ${data.retryAfter ?? 0} 秒后再试。${data.requestId ? ` 请求编号：${data.requestId}` : ""}`);
         if ("error" in data && response.status === 503) throw new Error(`服务暂时不可用，请稍后重试。${data.requestId ? ` 请求编号：${data.requestId}` : ""}`);
@@ -136,7 +139,7 @@ export default function Home() {
                 <p className="text-sm text-slate-500">生成模式：{result.providerStatus}{result.providerMessage ? `（${result.providerMessage}）` : ""}</p>
               </div>
             </details>
-            <FeedbackPanel requestId={(result as GeneratePromptResult & { requestId: string }).requestId} taskType={result.analysis.taskType} />
+            <FeedbackPanel requestId={result.requestId} taskType={result.analysis.taskType} />
           </> : <section className="rounded-lg border border-dashed border-line bg-white p-8 text-center text-slate-500">点击生成后，这里会先展示推荐任务指令；复杂任务会附带可复制的任务包。</section>}
         </div>
         <HistoryPanel history={history} onSelect={setIntent} onClear={clearHistory} />

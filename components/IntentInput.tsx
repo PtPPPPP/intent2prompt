@@ -1,6 +1,6 @@
 "use client";
 
-import type { TargetTool } from "@/lib/types";
+import { MAX_INPUT_LENGTH, type TargetTool } from "@/lib/types";
 
 interface IntentInputProps {
   value: string;
@@ -12,8 +12,6 @@ interface IntentInputProps {
   onExampleClick: (value: string) => void;
   onSubmit: () => void;
 }
-
-const MAX_INPUT_LENGTH = 1000;
 
 export function IntentInput({
   value,

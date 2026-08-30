@@ -10,7 +10,7 @@ export interface PromptEnhancementResult {
 }
 
 function getProvider(): LLMProvider {
-  const provider = process.env.LLM_PROVIDER ?? "mock";
+  const provider = getEnv().llmProvider;
   return provider === "deepseek" || provider === "openai" || provider === "claude"
     ? provider
     : "mock";

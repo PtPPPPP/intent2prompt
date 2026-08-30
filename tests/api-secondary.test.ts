@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST as generate } from "@/app/api/generate/route";
 import { POST as feedback } from "@/app/api/feedback/route";
-import { POST as events } from "@/app/api/events/route";
 import { GET as health } from "@/app/api/health/route";
 import { resetRateLimitState } from "@/lib/rateLimit";
 
@@ -27,14 +26,6 @@ describe("secondary API routes", () => {
     expect((await first.json()).requestId).toMatch(/-/);
     expect(second.status).toBe(409);
     expect((await second.json()).requestId).toMatch(/-/);
-  });
-
-  it("rejects unknown analytics fields and accepts whitelisted copy events", async () => {
-    const invalid = await events(request("http://localhost/api/events", { event: "prompt_copied", requestId: "generation-1234", promptMode: "expert", input: "private" }));
-    const valid = await events(request("http://localhost/api/events", { event: "prompt_copied", requestId: "generation-1234", promptMode: "expert" }));
-    expect(invalid.status).toBe(400);
-    expect((await invalid.json()).requestId).toMatch(/-/);
-    expect(valid.status).toBe(200);
   });
 
   it("returns a safe health response with a request ID", async () => {

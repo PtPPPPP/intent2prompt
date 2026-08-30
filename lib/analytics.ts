@@ -1,6 +1,6 @@
 import type { PromptMode, TaskType } from "./types";
 
-export type AnalyticsEventType = "generation_completed" | "generation_failed" | "prompt_copied" | "feedback_submitted";
+export type AnalyticsEventType = "generation_completed" | "generation_failed" | "feedback_submitted";
 
 export interface AnalyticsEvent {
   event: AnalyticsEventType;

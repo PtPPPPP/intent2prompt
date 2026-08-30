@@ -2,7 +2,7 @@ import { recordAnalytics } from "@/lib/analytics";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
 import { createRequestId, getAnonymousClientKey } from "@/lib/clientIdentity";
 import { generatePromptPackage } from "@/lib/intentAnalyzer";
-import type { PromptPackageMode, TargetTool } from "@/lib/types";
+import { MAX_INPUT_LENGTH, type PromptPackageMode, type TargetTool } from "@/lib/types";
 import { logRequest } from "@/lib/logger";
 import { checkRateLimit, RateLimitStoreUnavailableError } from "@/lib/rateLimit";
 
@@ -13,7 +13,6 @@ interface GenerateRequestBody {
   packageMode?: unknown;
   clarificationAnswers?: unknown;
 }
-const MAX_INPUT_LENGTH = 1000;
 const targetTools = new Set<TargetTool>(["auto", "general", "chatgpt", "claude", "codex", "claude_code", "gemini", "image_generation"]);
 const packageModes = new Set<PromptPackageMode>(["auto", "single_prompt", "engineering_package", "multi_ai_package"]);
 

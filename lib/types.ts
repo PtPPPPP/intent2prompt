@@ -11,6 +11,9 @@ export type TaskType =
   | "business_plan"
   | "other";
 
+// 意图输入长度上限：前端 maxLength 与后端校验共用，保持单一来源
+export const MAX_INPUT_LENGTH = 1000;
+
 export type PromptMode = "concise" | "expert" | "competition";
 
 export type ProviderStatus = "mock" | "deepseek" | "fallback";

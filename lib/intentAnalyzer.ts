@@ -90,10 +90,9 @@ export async function generatePromptPackage(
   options: GeneratePromptOptions = {},
 ): Promise<GeneratePromptResult> {
   const originalInput = input.trim();
-  const analysis = analyzeIntent(originalInput);
-  const missingInfo = detectMissingInfo(originalInput, analysis);
-  const completedAnalysis = { ...analysis, missingInfo };
-  const clarifyingQuestions = generateClarifyingQuestions(missingInfo, completedAnalysis);
+  // analyzeIntent 返回值已含 missingInfo（只依赖 taskType 与输入文本），无需重复计算
+  const completedAnalysis = analyzeIntent(originalInput);
+  const clarifyingQuestions = generateClarifyingQuestions(completedAnalysis.missingInfo, completedAnalysis);
   const promptSchema = buildPromptSchema(originalInput, completedAnalysis, clarifyingQuestions);
   const rulePromptVersions = compilePromptVersions(promptSchema);
   const rulePromptPackage = buildPromptPackage(originalInput, completedAnalysis, clarifyingQuestions, options);
