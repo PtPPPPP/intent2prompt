@@ -109,7 +109,13 @@ export async function enhancePromptVersions(
         }),
       );
       return { promptVersions: enhancedVersions, providerStatus: "deepseek" };
-    } catch {
+    } catch (enhanceError) {
+      console.warn(JSON.stringify({
+        event: "llm_enhancement_fallback",
+        attempt,
+        error: enhanceError instanceof Error ? enhanceError.message : String(enhanceError),
+        timestamp: new Date().toISOString(),
+      }));
       // Retry once at most, then keep the rule-generated prompts.
     }
   }

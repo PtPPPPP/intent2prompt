@@ -46,6 +46,16 @@ describe("POST /api/generate", () => {
     expect(data).toHaveProperty("analysis");
     expect(data).toHaveProperty("promptVersions");
     expect(data).toHaveProperty("evaluation");
+    expect(data).toHaveProperty("package");
+  });
+
+  it("accepts target settings while keeping input as the only required field", async () => {
+    const response = await POST(jsonRequest({ input: "让 Codex 开发一个社团报名系统", targetTool: "claude", packageMode: "single_prompt", clarificationAnswers: { "clarification-1": "网页应用" } }));
+    const data = await readJson(response);
+
+    expect(response.status).toBe(200);
+    expect((data.package as { mode: string }).mode).toBe("single_prompt");
+    expect(((data.package as { targetTools: string[] }).targetTools)).toEqual(["claude"]);
   });
 
   it("keeps backward compatibility with intent", async () => {
@@ -79,6 +89,9 @@ describe("POST /api/generate", () => {
     [{ intent: 123 }, "intent must be a string"],
     [{ input: "x".repeat(1001) }, "input must be no longer than 1000 characters"],
     [{ intent: "x".repeat(1001) }, "intent must be no longer than 1000 characters"],
+    [{ input: "有效输入", targetTool: "unknown" }, "targetTool is invalid"],
+    [{ input: "有效输入", packageMode: "unknown" }, "packageMode is invalid"],
+    [{ input: "有效输入", clarificationAnswers: ["not allowed"] }, "clarificationAnswers must be a string record"],
   ])("returns 400 for invalid request body %j", async (body, message) => {
     const response = await POST(jsonRequest(body));
     const data = await readJson(response);
@@ -160,6 +173,6 @@ describe("POST /api/generate", () => {
 
     expect(response.status).toBe(200);
     expect(data.providerStatus).toBe("deepseek");
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

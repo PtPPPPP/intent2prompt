@@ -15,6 +15,71 @@ export type PromptMode = "concise" | "expert" | "competition";
 
 export type ProviderStatus = "mock" | "deepseek" | "fallback";
 
+export type TargetTool =
+  | "auto"
+  | "general"
+  | "chatgpt"
+  | "claude"
+  | "codex"
+  | "claude_code"
+  | "gemini"
+  | "image_generation";
+
+export type PromptPackageMode =
+  | "auto"
+  | "single_prompt"
+  | "engineering_package"
+  | "multi_ai_package";
+
+export type PromptArtifactType =
+  | "main_prompt"
+  | "agent_md"
+  | "tool_prompt"
+  | "architecture_prompt"
+  | "integration_prompt"
+  | "fix_prompt"
+  | "review_prompt"
+  | "acceptance_prompt"
+  | "follow_up_prompt";
+
+export interface PromptArtifact {
+  id: string;
+  type: PromptArtifactType;
+  title: string;
+  description: string;
+  targetTool?: TargetTool;
+  content: string;
+  recommended?: boolean;
+}
+
+export interface ClarificationQuestion {
+  id: string;
+  field: string;
+  question: string;
+  required: boolean;
+  defaultAnswer?: string;
+  options?: string[];
+}
+
+export interface PromptPackage {
+  id: string;
+  title: string;
+  summary: string;
+  mode: PromptPackageMode;
+  targetTools: TargetTool[];
+  recommendedArtifactId: string;
+  artifacts: PromptArtifact[];
+  assumptions: string[];
+  clarificationQuestions: ClarificationQuestion[];
+  usageInstructions: string[];
+}
+
+export interface GeneratePromptOptions {
+  targetTool?: TargetTool;
+  packageMode?: PromptPackageMode;
+  clarificationAnswers?: Record<string, string>;
+}
+
 export interface IntentRule {
   taskType: TaskType;
   label: string;
@@ -75,6 +140,7 @@ export interface PromptEvaluation {
 
 export interface GeneratePromptResult {
   originalInput: string;
+  package: PromptPackage;
   analysis: IntentAnalysis;
   clarifyingQuestions: string[];
   promptSchema: PromptSchema;

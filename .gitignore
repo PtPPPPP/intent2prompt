@@ -6,3 +6,6 @@ dist
 .env.local
 *.log
 .claude
+
+# 构建增量缓存
+*.tsbuildinfo

@@ -24,6 +24,33 @@ describe("generatePromptPackage", () => {
     expect(result.promptVersions[1].content).toContain("角色设定 Role");
     expect(result.promptVersions[1].content).toContain("输出格式 Output Format");
     expect(result.evaluation.score).toBeGreaterThanOrEqual(70);
+    expect(result.package.artifacts.find((artifact) => artifact.recommended)?.content).toBeTruthy();
+  });
+
+  it("generates an engineering package for Codex and a collaboration package for Codex plus Claude", async () => {
+    const engineering = await generatePromptPackage("让 Codex 开发一个社团报名系统");
+    const collaboration = await generatePromptPackage("让 Codex 和 Claude 一起开发一个 Prompt 生成器");
+
+    expect(engineering.package.mode).toBe("engineering_package");
+    expect(engineering.package.targetTools).toEqual(["codex"]);
+    expect(engineering.package.artifacts.map((artifact) => artifact.type)).toEqual(
+      expect.arrayContaining(["main_prompt", "agent_md", "fix_prompt", "acceptance_prompt"]),
+    );
+    expect(collaboration.package.mode).toBe("multi_ai_package");
+    expect(collaboration.package.targetTools).toEqual(["codex", "claude"]);
+    expect(collaboration.package.artifacts.map((artifact) => artifact.type)).toContain("integration_prompt");
+  });
+
+  it("uses the image prompt structure and accepts optional clarification answers", async () => {
+    const result = await generatePromptPackage("生成一张高校科技社团招新海报的图片 Prompt", {
+      clarificationAnswers: { "clarification-1": "面向 2026 级新生" },
+    });
+
+    const mainPrompt = result.package.artifacts.find((artifact) => artifact.recommended)?.content ?? "";
+    expect(result.package.mode).toBe("single_prompt");
+    expect(result.package.targetTools).toEqual(["image_generation"]);
+    expect(mainPrompt).toContain("主体与动作");
+    expect(mainPrompt).toContain("面向 2026 级新生");
   });
 
   it("detects survey intents and keeps clarifying questions short", async () => {

@@ -7,6 +7,8 @@ import { getTemplate, getTemplateByInput } from "./templates";
 import type { GeneratePromptResult, IntentAnalysis, TaskType } from "./types";
 import { generateClarifyingQuestions } from "./questionGenerator";
 import { enhancePromptVersions } from "./llmClient";
+import { buildPromptPackage } from "./promptPackageBuilder";
+import type { GeneratePromptOptions } from "./types";
 
 function inferTaskType(input: string): { taskType: TaskType; confidence: number } {
   const ruleResult = classifyIntentByRules(input);
@@ -83,7 +85,10 @@ export function analyzeIntent(input: string): IntentAnalysis {
 }
 
 // MVP 主链路保持规则 / 模板生成，避免没有 API key 时影响完整演示。
-export async function generatePromptPackage(input: string): Promise<GeneratePromptResult> {
+export async function generatePromptPackage(
+  input: string,
+  options: GeneratePromptOptions = {},
+): Promise<GeneratePromptResult> {
   const originalInput = input.trim();
   const analysis = analyzeIntent(originalInput);
   const missingInfo = detectMissingInfo(originalInput, analysis);
@@ -91,15 +96,30 @@ export async function generatePromptPackage(input: string): Promise<GenerateProm
   const clarifyingQuestions = generateClarifyingQuestions(missingInfo, completedAnalysis);
   const promptSchema = buildPromptSchema(originalInput, completedAnalysis, clarifyingQuestions);
   const rulePromptVersions = compilePromptVersions(promptSchema);
-  const providerResult = await enhancePromptVersions(rulePromptVersions);
-  const evaluation = evaluatePrompt(providerResult.promptVersions, promptSchema);
+  const rulePromptPackage = buildPromptPackage(originalInput, completedAnalysis, clarifyingQuestions, options);
+  const recommendedArtifact = rulePromptPackage.artifacts.find(
+    (artifact) => artifact.id === rulePromptPackage.recommendedArtifactId,
+  );
+  const providerResult = await enhancePromptVersions([
+    ...rulePromptVersions,
+    ...(recommendedArtifact
+      ? [{ mode: "expert" as const, title: recommendedArtifact.title, description: recommendedArtifact.description, content: recommendedArtifact.content }]
+      : []),
+  ]);
+  const promptVersions = providerResult.promptVersions.slice(0, rulePromptVersions.length);
+  const enhancedRecommended = providerResult.promptVersions[rulePromptVersions.length];
+  const promptPackage = enhancedRecommended && recommendedArtifact
+    ? { ...rulePromptPackage, artifacts: rulePromptPackage.artifacts.map((artifact) => artifact.id === recommendedArtifact.id ? { ...artifact, content: enhancedRecommended.content } : artifact) }
+    : rulePromptPackage;
+  const evaluation = evaluatePrompt(promptVersions, promptSchema);
 
   return {
     originalInput,
+    package: promptPackage,
     analysis: completedAnalysis,
     clarifyingQuestions,
     promptSchema,
-    promptVersions: providerResult.promptVersions,
+    promptVersions,
     evaluation,
     providerStatus: providerResult.providerStatus,
     providerMessage: providerResult.providerMessage,

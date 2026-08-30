@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAnonymousClientId } from "@/lib/anonymousClientId";
 import type { TaskType } from "@/lib/types";
 
 export function FeedbackPanel({ requestId, taskType }: { requestId: string; taskType: TaskType }) {
@@ -10,7 +11,7 @@ export function FeedbackPanel({ requestId, taskType }: { requestId: string; task
     if (state === "sending" || state === "done") return;
     setState("sending");
     try {
-      const response = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ generationRequestId: requestId, helpful, reason: reason || undefined, taskType }) });
+      const response = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json", "x-anonymous-client-id": getAnonymousClientId() }, body: JSON.stringify({ generationRequestId: requestId, helpful, reason: reason || undefined, taskType }) });
       if (!response.ok) throw new Error();
       setState("done");
     } catch { setState("error"); }

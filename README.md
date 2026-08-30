@@ -1,6 +1,14 @@
 # Intent2Prompt
 
-Intent2Prompt 是面向中文学生创新场景的“意图到提示词编译器”。它把一句简短需求转换为意图分析、缺失信息、澄清问题、结构化 Prompt、三种可复制版本和质量评分。
+Intent2Prompt 把一句简短意图转换为可直接发送给 AI 的推荐任务指令。软件开发和多 AI 协作场景会额外生成可复制的任务包，而不会替用户执行最终任务。
+
+当前主流程支持：
+
+- 自动识别或手动选择目标 AI：通用 AI、ChatGPT、Claude、Codex、Claude Code、Gemini、图像生成 AI。
+- 自动判断单任务、工程任务包和多 AI 协作包。
+- 生成推荐任务指令、AGENT.md、整合、修复和验收 Prompt。
+- 最多三个关键补充问题；留空即可使用默认假设。
+- 单项复制、复制整个任务包、导出 Markdown；技术细节默认折叠。
 
 ## v0.4.1 Pilot Hardening 状态
 
@@ -70,13 +78,18 @@ DEEPSEEK_MODEL=deepseek-chat
 
 ```json
 {
-  "input": "帮我设计一个大学生 AI 使用情况调查问卷"
+  "input": "让 Codex 开发一个社团报名系统",
+  "targetTool": "auto",
+  "packageMode": "auto",
+  "clarificationAnswers": {
+    "clarification-1": "网页应用"
+  }
 }
 ```
 
 也兼容旧字段 `intent`。输入去除首尾空白后必须为 1–1000 个字符；无效输入返回 `400`。
 
-响应包含原有生成结果，以及：
+`input` 是唯一必填字段，仍兼容旧字段 `intent`。响应以 `package` 为主要结果，并为旧页面和调用方保留原有分析、三版 Prompt 与评分字段：
 
 ```ts
 providerStatus: "mock" | "deepseek" | "fallback"

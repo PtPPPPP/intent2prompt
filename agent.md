@@ -1,685 +1,1082 @@
 # AGENT.md
 
-## Project Name
+## 1. Project Name
 
 **Intent2Prompt**
 
-## Project Goal
+中文名称可暂定为：
 
-Intent2Prompt is a Chinese intent-to-prompt generation system.
-
-The user provides a short natural-language intention, such as:
-
-* 帮我写一个挑战杯项目计划书
-* 帮我做社团招新文案
-* 帮我总结一篇论文
-* 帮我设计一个调查问卷
-* 帮我拆解一个编程项目需求
-
-The system should analyze the user's intent, detect missing information, generate clarifying questions, compile structured prompts, and provide multiple prompt versions that can be copied and used with an AI model.
-
-This project is intended for Chinese university students, student clubs, research training, innovation competitions, and AI productivity scenarios.
+**意图到任务包生成器**
 
 ---
 
-## Core Principle
+## 2. Product Definition
 
-Do not build a generic chatbot.
+Intent2Prompt is a tool that converts a short, vague user intention into a structured, directly usable AI task package.
 
-Do not build only a simple prompt beautifier.
+The product does not execute the final task for the user.
 
-This project must focus on the following closed loop:
+The product does not attempt to replace ChatGPT, Claude, Codex, Gemini, or other AI tools.
+
+Its responsibility is to help users prepare better instructions for those tools.
+
+Core flow:
 
 ```text
-User Short Intent
-  -> Intent Analysis
-  -> Missing Information Detection
-  -> Clarifying Questions
-  -> Prompt Schema Construction
-  -> Prompt Compilation
-  -> Prompt Quality Evaluation
-  -> Reusable Prompt Asset
+用户简短描述意图
+→ 系统识别任务和目标工具
+→ 自动补全可合理推断的信息
+→ 必要时提出少量关键问题
+→ 生成可直接复制使用的 Prompt 或任务包
+→ 用户发送给目标 AI
 ```
 
-Every major feature should support this loop.
+The project should reduce the user's work in:
+
+* organizing requirements
+* writing prompts
+* splitting complex tasks
+* assigning work between multiple AI tools
+* defining output formats
+* defining constraints
+* defining acceptance criteria
+* writing follow-up prompts
+* writing integration and review prompts
 
 ---
 
-## MVP Scope
+## 3. Core Product Goal
 
-The first version must prioritize a working MVP.
+The primary product goal is:
 
-The MVP should include:
+> Turn a short intention into a complete, practical, reusable AI instruction package with minimal user effort.
 
-1. A homepage with a Chinese intent input box.
-2. Example intent buttons.
-3. Intent analysis result display.
-4. Missing information detection.
-5. Up to 3 clarifying questions.
-6. Three generated prompt versions:
-
-   * 简洁版
-   * 专家版
-   * 比赛/项目版
-7. Copy-to-clipboard support.
-8. Basic history records.
-9. Mock LLM mode so the project can run without API keys.
-10. README with setup and usage instructions.
-
-Do not add complex features before the MVP is complete.
-
----
-
-## Recommended Tech Stack
-
-Use the following stack unless there is a strong reason not to:
-
-* Framework: Next.js
-* Language: TypeScript
-* Styling: Tailwind CSS
-* Backend: Next.js API Routes or Server Actions
-* Storage: local JSON, localStorage, or SQLite for MVP
-* LLM integration: abstracted through a unified `llmClient`
-* Deployment target: Vercel-compatible
-
-The project should be easy for a student team to understand, run, and extend.
-
----
-
-## Required Directory Structure
-
-Prefer this structure:
+The product should help a user move from:
 
 ```text
-intent2prompt/
-  app/
-    page.tsx
-    api/
-      generate/
-        route.ts
-
-  components/
-    IntentInput.tsx
-    IntentAnalysisCard.tsx
-    ClarifyingQuestions.tsx
-    PromptVersionCard.tsx
-    HistoryPanel.tsx
-    EvaluationCard.tsx
-
-  lib/
-    types.ts
-    llmClient.ts
-    intentAnalyzer.ts
-    missingInfoDetector.ts
-    questionGenerator.ts
-    promptSchemaBuilder.ts
-    promptCompiler.ts
-    promptEvaluator.ts
-    templates.ts
-    intentRules.ts
-
-  data/
-    examples.ts
-
-  public/
-
-  README.md
-  AGENT.md
-  .env.example
+我大概知道想做什么，但不知道怎么和 AI 说
 ```
 
-Do not put all logic inside `app/page.tsx`.
+to:
 
-Core logic must be separated into `lib/`.
+```text
+我已经得到一份可以直接发送给 AI 的完整任务指令
+```
 
-UI components must be separated into `components/`.
+The product must optimize for:
+
+* fewer user inputs
+* fewer clarification questions
+* less manual requirement writing
+* less prompt editing
+* less repeated explanation
+* better AI task coordination
+* faster copy-and-use workflow
 
 ---
 
-## Core Modules
+## 4. What This Product Is Not
 
-### 1. Intent Analyzer
+Intent2Prompt is not:
 
-Purpose:
+* a general AI chatbot
+* a ChatGPT replacement
+* an AI answer-generation platform
+* a full project management platform
+* a Prompt marketplace
+* a multi-agent execution system
+* an autonomous coding agent
+* a workflow automation platform
+* a generic Prompt beautifier
+* a tool that only makes prompts longer
+* a system that exposes Prompt engineering terminology to ordinary users
 
-Analyze the user's short Chinese intent.
+Do not turn the project into:
 
-Input:
-
-```ts
-string
+```text
+用户输入任务
+→ 本产品调用模型
+→ 本产品直接完成所有任务
 ```
 
-Output:
+The default product output must remain a Prompt or task package that the user can send to another AI tool.
 
-```ts
-IntentAnalysis
-```
-
-Responsibilities:
-
-* Detect task type.
-* Infer user goal.
-* Infer target output.
-* Infer usage scenario.
-* Extract known information.
-* Mark uncertain assumptions.
-
-Do not overcomplicate this module in MVP.
-Rule-based classification plus mock LLM output is acceptable.
+Real LLM calls may be used internally to improve generated instructions, but the product itself should not become the final task executor.
 
 ---
 
-### 2. Missing Info Detector
+## 5. Core User Groups
 
-Purpose:
+The first version should primarily serve:
 
-Detect information missing from the user's intent.
+* university students
+* student clubs
+* AI Coding beginners
+* student innovation teams
+* competition teams
+* users who work with ChatGPT, Claude, Codex, Gemini, and image-generation tools
+* users who know what they want but cannot clearly describe it to AI
+
+Typical user inputs:
+
+```text
+帮我让 Codex 开发一个社团报名系统
+```
+
+```text
+我想让 Claude 帮我设计一个项目架构
+```
+
+```text
+我想让 Codex 和 Claude 同时开发一个项目
+```
+
+```text
+帮我写一个适合微信公众号的 Prompt
+```
+
+```text
+帮我生成一个项目验收 Prompt
+```
+
+```text
+我想让 AI 帮我分析一篇论文
+```
+
+---
+
+## 6. Core Product Modes
+
+The project should support three main product modes.
+
+---
+
+### 6.1 Single Prompt Mode
+
+Used for ordinary single-task requests.
+
+Examples:
+
+```text
+帮我写一篇公众号推送
+```
+
+```text
+帮我分析一篇论文
+```
+
+```text
+帮我设计一份调查问卷
+```
+
+Expected output:
+
+* one recommended Prompt
+* optional shorter or more detailed variants
+* copy button
+* optional explanation of assumptions
+* optional follow-up Prompt
+
+The recommended Prompt should be the default visible result.
+
+Do not force users to compare multiple versions before they can use the product.
+
+---
+
+### 6.2 Engineering Task Package Mode
+
+Used when the user wants an AI coding tool to build or modify software.
+
+Typical target tools:
+
+* Codex
+* Claude Code
+* Cursor
+* GitHub Copilot
+* other coding agents
+
+Expected package may include:
+
+1. Main development Prompt
+2. AGENT.md
+3. Project architecture requirements
+4. Modification boundaries
+5. Test requirements
+6. Acceptance criteria
+7. Fix Prompt
+8. Final review Prompt
+
+Example user input:
+
+```text
+帮我让 Codex 开发一个微信小程序
+```
+
+The system should generate a task package that helps the coding agent:
+
+* understand the project goal
+* inspect existing files
+* avoid unnecessary rewrites
+* follow a clear technical stack
+* complete tests
+* report changed files
+* avoid scope creep
+
+---
+
+### 6.3 Multi-AI Collaboration Package Mode
+
+Used when the user wants multiple AI tools to work together.
 
 Example:
 
-User input:
+```text
+我想让 Codex 和 Claude 同时开发这个项目
+```
+
+Expected package may include:
+
+1. Shared project definition
+2. Shared AGENT.md
+3. Codex Prompt
+4. Claude Prompt
+5. Work division
+6. Deliverable format
+7. Integration Prompt
+8. Conflict-resolution rules
+9. Final acceptance Prompt
+
+The system must avoid assigning identical work to both tools unless deliberate comparison is requested.
+
+Typical division:
 
 ```text
-帮我写社团招新文案
+Codex:
+工程实现、代码修改、测试、构建、运行验证
+
+Claude:
+架构设计、规则设计、文档、评审、方案分析
 ```
 
-Possible missing information:
+The generated package should reduce coordination work for the user.
+
+---
+
+## 7. Target AI Adaptation
+
+The generated Prompt must adapt to the target AI tool.
+
+Supported target categories should initially include:
 
 ```text
-社团名称、面向人群、发布平台、文案风格、字数要求、是否需要标题
+通用聊天 AI
+ChatGPT
+Claude
+Codex
+Claude Code
+Gemini
+图像生成 AI
 ```
 
-Responsibilities:
-
-* Use task-specific rules.
-* Return only important missing fields.
-* Avoid asking too many questions.
-* Prioritize fields that directly affect prompt quality.
+The target tool affects Prompt structure.
 
 ---
 
-### 3. Clarifying Question Generator
+### 7.1 General Chat AI
 
-Purpose:
+Recommended sections:
 
-Generate at most 3 useful clarifying questions.
+* role
+* task
+* context
+* input
+* output format
+* constraints
+* quality requirements
 
-Rules:
+---
 
-* Questions must be short.
-* Questions must be in Chinese.
-* Questions must be directly useful for improving the final prompt.
-* Do not ask obvious or unnecessary questions.
-* If enough information is available, return an empty list.
+### 7.2 Claude
 
-Bad example:
+Claude-oriented Prompts may emphasize:
+
+* analysis
+* architecture
+* trade-offs
+* documentation
+* structured reasoning
+* review criteria
+* long-context materials
+
+Do not ask Claude to only give high-level suggestions when the user needs concrete reusable outputs.
+
+---
+
+### 7.3 Codex and Coding Agents
+
+Coding-agent Prompts should include:
+
+* project path or repository context
+* requirement summary
+* allowed modification scope
+* files to inspect
+* technical stack
+* implementation priority
+* tests to run
+* build and lint requirements
+* acceptance criteria
+* forbidden actions
+* final report format
+
+Coding Prompts should instruct the agent to inspect the actual repository before modifying files.
+
+They should avoid encouraging:
+
+* complete rewrites without reason
+* unnecessary dependencies
+* architecture expansion
+* branch or worktree creation unless requested
+* claiming completion before tests pass
+
+---
+
+### 7.4 Image Generation AI
+
+Image-generation Prompts should include:
+
+* subject
+* composition
+* scene
+* style
+* lighting
+* color palette
+* visual hierarchy
+* text content if needed
+* aspect ratio
+* prohibited elements
+
+Do not use software-development Prompt structures for image-generation tasks.
+
+---
+
+## 8. User Experience Principles
+
+---
+
+### 8.1 Minimum User Effort
+
+The system should infer reasonable defaults whenever possible.
+
+Do not ask the user for information that:
+
+* can be inferred from context
+* has little impact on the final Prompt
+* can be represented as an editable assumption
+* can be handled using a sensible default
+
+Target clarification count:
 
 ```text
-你还有什么其他要求吗？
+Simple task: 0–1 question
+Complex task: 1–2 questions
+Maximum: 3 questions
 ```
 
-Good example:
+---
+
+### 8.2 Recommended Output First
+
+The interface should default to one recommended result.
+
+Do not make users choose between:
+
+* concise
+* expert
+* competition
+* structured
+* advanced
+
+before seeing a usable Prompt.
+
+Alternative versions can remain available under:
 
 ```text
-这个文案主要发布在哪个平台，比如公众号、小红书还是社群？
+其他版本
+高级选项
 ```
 
 ---
 
-### 4. Prompt Schema Builder
+### 8.3 Technical Details Should Be Secondary
 
-Purpose:
+The following information may remain in the system, but should be collapsed by default:
 
-Convert intent analysis and missing information into a structured prompt schema.
+* intent analysis
+* task classification
+* missing-information list
+* Prompt Schema
+* Prompt evaluation score
+* provider status
+* internal assumptions
+* rule matching results
 
-The schema should include:
+Ordinary users should mainly see:
 
-```ts
-{
-  role: string;
-  task: string;
-  context: string;
-  input: string;
-  constraints: string[];
-  outputFormat: string[];
-  qualityCriteria: string[];
-  examples?: string[];
-  clarifyingQuestions?: string[];
-  assumptions?: string[];
-  safetyNotes?: string[];
-}
+```text
+系统理解
+必要补充
+推荐 Prompt
+复制
+导出
+其他任务包内容
 ```
 
-The schema is the internal representation of a high-quality prompt.
-
 ---
 
-### 5. Prompt Compiler
+### 8.4 Copy-and-Use Workflow
 
-Purpose:
+The main success path should be:
 
-Compile the prompt schema into final user-facing prompts.
-
-The compiler must generate at least three versions:
-
-1. **简洁版**
-   Suitable for quick AI usage.
-
-2. **专家版**
-   More detailed, higher-quality, with clear role, constraints, and output format.
-
-3. **比赛/项目版**
-   Suitable for Challenge Cup, innovation competitions, student club projects, research training, and project planning.
-
-Each version should be readable, structured, and directly copyable.
-
----
-
-### 6. Prompt Evaluator
-
-Purpose:
-
-Evaluate the quality of the generated prompt.
-
-MVP evaluation can be rule-based.
-
-Scoring dimensions:
-
-* Task clarity
-* Context completeness
-* Output format clarity
-* Constraint quality
-* Executability
-* Hallucination risk control
-* Chinese expression quality
-
-Output example:
-
-```ts
-{
-  score: 86,
-  dimensionScores: {
-    taskClarity: 18,
-    contextCompleteness: 14,
-    outputFormatClarity: 15,
-    constraintQuality: 13,
-    executability: 14,
-    hallucinationRiskControl: 6,
-    chineseExpressionQuality: 6
-  },
-  strengths: [],
-  weaknesses: [],
-  suggestions: []
-}
+```text
+输入一句话
+→ 最多回答少量问题
+→ 点击复制
 ```
 
-Do not block MVP development on a complex evaluator.
+The user should not need to:
+
+* manually combine multiple Prompt fragments
+* edit JSON
+* understand Prompt engineering frameworks
+* manually write acceptance criteria
+* manually define agent roles
+* manually create integration instructions
 
 ---
 
-### 7. Template Library
+## 9. Prompt Package Structure
 
-Purpose:
-
-Provide reusable task templates.
-
-The first version must cover at least:
-
-1. 挑战杯项目计划书
-2. 社团招新文案
-3. 论文总结
-4. 编程项目需求拆解
-5. 调查问卷设计
-
-Each template should define:
-
-* task type
-* required information
-* recommended role
-* recommended output format
-* common constraints
-* quality criteria
-* prompt pattern
-
----
-
-## Task Types
-
-The first version should support these task types:
+A generated task package may use the following structure internally:
 
 ```ts
-type TaskType =
-  | "project_planning"
-  | "club_operation"
-  | "writing"
-  | "academic_paper"
-  | "coding"
-  | "data_analysis"
-  | "survey"
-  | "learning"
-  | "presentation"
-  | "business_plan"
-  | "other";
-```
-
-Chinese labels can be displayed in the UI.
-
-Do not create too many categories in the MVP.
-
----
-
-## Data Types
-
-Create clear TypeScript types in `lib/types.ts`.
-
-Required core types:
-
-```ts
-export type TaskType =
-  | "project_planning"
-  | "club_operation"
-  | "writing"
-  | "academic_paper"
-  | "coding"
-  | "data_analysis"
-  | "survey"
-  | "learning"
-  | "presentation"
-  | "business_plan"
-  | "other";
-
-export type PromptMode = "concise" | "expert" | "competition";
-
-export interface IntentAnalysis {
+export interface PromptPackage {
+  title: string;
+  summary: string;
+  targetTool: TargetTool;
   taskType: TaskType;
-  userGoal: string;
-  targetOutput: string;
-  scenario: string;
-  knownInfo: string[];
-  missingInfo: string[];
+  recommendedPrompt: string;
+  additionalPrompts?: PromptArtifact[];
   assumptions: string[];
-  confidence: number;
+  clarificationQuestions: ClarificationQuestion[];
+  usageInstructions?: string[];
 }
+```
 
-export interface PromptSchema {
-  role: string;
-  task: string;
-  context: string;
-  input: string;
-  constraints: string[];
-  outputFormat: string[];
-  qualityCriteria: string[];
-  examples?: string[];
-  clarifyingQuestions?: string[];
-  assumptions?: string[];
-  safetyNotes?: string[];
-}
+Supporting types:
 
-export interface PromptVersion {
-  mode: PromptMode;
+```ts
+export type TargetTool =
+  | "general"
+  | "chatgpt"
+  | "claude"
+  | "codex"
+  | "claude_code"
+  | "gemini"
+  | "image_generation";
+
+export type TaskType =
+  | "writing"
+  | "research"
+  | "academic"
+  | "project_planning"
+  | "software_development"
+  | "code_modification"
+  | "multi_ai_collaboration"
+  | "presentation"
+  | "survey"
+  | "data_analysis"
+  | "image_generation"
+  | "other";
+
+export type PromptArtifactType =
+  | "main_prompt"
+  | "agent_md"
+  | "architecture_prompt"
+  | "integration_prompt"
+  | "review_prompt"
+  | "fix_prompt"
+  | "acceptance_prompt"
+  | "follow_up_prompt";
+
+export interface PromptArtifact {
+  id: string;
+  type: PromptArtifactType;
   title: string;
   description: string;
   content: string;
 }
 
-export interface PromptEvaluation {
-  score: number;
-  dimensionScores: {
-    taskClarity: number;
-    contextCompleteness: number;
-    outputFormatClarity: number;
-    constraintQuality: number;
-    executability: number;
-    hallucinationRiskControl: number;
-    chineseExpressionQuality: number;
-  };
-  strengths: string[];
-  weaknesses: string[];
-  suggestions: string[];
-}
-
-export interface GeneratePromptResult {
-  originalInput: string;
-  analysis: IntentAnalysis;
-  clarifyingQuestions: string[];
-  promptSchema: PromptSchema;
-  promptVersions: PromptVersion[];
-  evaluation: PromptEvaluation;
+export interface ClarificationQuestion {
+  id: string;
+  question: string;
+  field: string;
+  required: boolean;
+  defaultAnswer?: string;
 }
 ```
 
----
+These types may be adjusted to match the existing codebase.
 
-## UI Requirements
-
-The UI should be simple, clean, and suitable for demo.
-
-Required sections:
-
-1. Header
-   Show project name and short description.
-
-2. Intent Input Area
-   Large input box for Chinese short intent.
-
-3. Example Buttons
-   Provide clickable examples.
-
-4. Intent Analysis Card
-   Show task type, user goal, target output, scenario, missing information, and assumptions.
-
-5. Clarifying Questions Card
-   Show up to 3 questions.
-
-6. Prompt Version Cards
-   Show concise, expert, and competition versions.
-
-7. Evaluation Card
-   Show prompt quality score and suggestions.
-
-8. History Panel
-   Show previous inputs and generated prompts.
-
-Avoid unnecessary animations or complex visual effects before the core flow works.
+Do not rewrite all existing types unless necessary.
 
 ---
 
-## LLM Integration Rules
+## 10. Engineering Task Package Requirements
 
-The project must support mock mode first.
+For software-development tasks, the generated package should consider the following sections.
 
-Create `lib/llmClient.ts`.
-
-It should expose a unified interface such as:
-
-```ts
-export async function generateWithLLM(prompt: string): Promise<string>
-```
-
-The implementation should support:
-
-1. Mock mode
-2. Future OpenAI API
-3. Future Claude API
-
-Use environment variables:
+### Main Development Prompt
 
 ```text
-LLM_PROVIDER=mock
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
+项目背景
+目标
+当前状态
+技术栈
+核心功能
+目录要求
+实现顺序
+修改范围
+测试要求
+验收标准
+禁止事项
+完成报告
 ```
 
-Do not hardcode API keys.
+### AGENT.md
 
-Do not require real API keys to run the MVP.
+The generated AGENT.md should define:
+
+* project goal
+* core scope
+* architecture boundaries
+* coding rules
+* development priority
+* prohibited features
+* testing requirements
+* definition of done
+
+### Integration Prompt
+
+Used when one AI needs to integrate another AI's output.
+
+It should define:
+
+* source materials
+* target files
+* conflict-resolution priority
+* compatibility requirements
+* test requirements
+* final report format
+
+### Fix Prompt
+
+Used after review or testing identifies issues.
+
+It should:
+
+* state confirmed current status
+* list concrete defects
+* constrain modification scope
+* prevent unnecessary feature expansion
+* require test, lint, and build validation
+
+### Acceptance Prompt
+
+Used for final verification.
+
+It should include:
+
+* functional tests
+* API tests
+* build checks
+* lint checks
+* documentation checks
+* security checks where relevant
+* honest completion reporting
 
 ---
 
-## Coding Rules
+## 11. Multi-AI Collaboration Rules
 
-Follow these rules strictly:
+When generating a package for multiple AI tools:
 
-1. Use TypeScript.
-2. Keep functions small and readable.
-3. Separate business logic from UI.
-4. Do not over-engineer.
-5. Do not add authentication in MVP.
-6. Do not add payment features.
-7. Do not add team collaboration features before MVP.
-8. Do not add vector databases before MVP.
-9. Do not add browser plugins before MVP.
-10. Do not add complex agent workflows before MVP.
-11. Do not rewrite the whole architecture without reason.
-12. Do not delete existing working features unless necessary.
-13. Keep Chinese UX text clear and natural.
-14. Ensure the project can run locally.
-15. Update README when adding major functionality.
+1. Define one shared project goal.
+2. Define one shared project scope.
+3. Generate one shared AGENT.md.
+4. Assign different responsibilities to each AI.
+5. Define the expected deliverable from each AI.
+6. Define the order of integration.
+7. Define how conflicts are resolved.
+8. Define which tool owns final code integration.
+9. Define final acceptance checks.
+10. Prevent both agents from independently changing the same files without coordination.
+
+Recommended conflict priority:
+
+```text
+AGENT.md
+→ explicit user requirements
+→ current working code
+→ agreed architecture
+→ individual agent suggestions
+```
+
+Recommended default ownership:
+
+```text
+Codex:
+final repository integration and validation
+
+Claude:
+architecture, rules, documentation, review materials
+```
+
+This is a default, not a mandatory rule.
+
+Adapt according to the actual tools named by the user.
 
 ---
 
-## What Not To Build Yet
+## 12. Prompt Generation Quality Rules
 
-Do not build these features in the first MVP:
+Every recommended Prompt should be:
 
-* User login
-* Subscription or payment
-* Multi-user workspace
+* directly copyable
+* complete enough to execute
+* specific to the user's goal
+* adapted to the target AI
+* clear about deliverables
+* clear about boundaries
+* clear about success criteria
+* free of irrelevant Prompt jargon
+* concise enough to remain usable
+* detailed enough to reduce repeated communication
+
+Do not optimize for maximum Prompt length.
+
+A longer Prompt is not automatically better.
+
+The generated Prompt should contain only information that helps the target AI complete the task.
+
+---
+
+## 13. Clarification Logic
+
+Ask a question only when the answer materially affects:
+
+* target platform
+* output type
+* technical stack
+* audience
+* scale
+* deadline
+* format
+* collaboration structure
+* acceptance criteria
+
+Bad clarification:
+
+```text
+你还有什么其他要求吗？
+```
+
+Good clarification:
+
+```text
+你希望 Codex 开发网页、微信小程序还是移动端应用？
+```
+
+Bad clarification:
+
+```text
+你想要什么风格？
+```
+
+Better clarification:
+
+```text
+这篇招新文案主要发布在微信公众号还是微信群？
+```
+
+Whenever possible, provide a default:
+
+```text
+未指定时，将按 Next.js 网页项目生成。
+```
+
+The user should be able to select:
+
+```text
+按默认设置生成
+```
+
+---
+
+## 14. Existing Infrastructure
+
+The current project may already include:
+
+* rule-based intent classification
+* Prompt templates
+* DeepSeek optional enhancement
+* API validation
+* rate limiting
+* anonymous identifiers
+* request IDs
+* logging
+* health endpoint
+* feedback endpoint
+* events endpoint
+* Redis-related code
+* testing infrastructure
+* privacy documentation
+
+Do not delete stable infrastructure merely because product priorities have changed.
+
+However:
+
+* do not continue expanding infrastructure unless necessary
+* do not make Redis, health checks, analytics, or provider status the main user experience
+* do not prioritize infrastructure work over user-facing Prompt package quality
+* keep technical systems in maintenance mode unless they block the core flow
+
+---
+
+## 15. Product Development Priorities
+
+Follow this order.
+
+### P0: Product Direction Correction
+
+1. Make one recommended Prompt the primary output.
+2. Add target AI selection or automatic target detection.
+3. Add engineering task package generation.
+4. Add multi-AI collaboration package generation.
+5. Add AGENT.md generation.
+6. Add integration, fix, and acceptance Prompt generation.
+7. Reduce clarification questions.
+8. Collapse technical details by default.
+
+### P1: Usability
+
+1. Copy individual artifact.
+2. Copy complete package.
+3. Export Markdown.
+4. Save package locally.
+5. Reuse previous input.
+6. Edit assumptions before regenerating.
+7. Add clear usage instructions.
+
+### P2: Quality
+
+1. Improve target-specific templates.
+2. Improve Codex task instructions.
+3. Improve Claude architecture instructions.
+4. Improve multi-AI division.
+5. Add realistic test examples.
+6. Compare generated package with manual Prompt writing.
+7. Collect user feedback on editing effort.
+
+### P3: Infrastructure Maintenance
+
+1. Preserve existing tests.
+2. Keep lint and build passing.
+3. Fix confirmed security issues.
+4. Maintain reasonable rate limits.
+5. Maintain privacy boundaries.
+
+Do not let P3 replace P0–P2.
+
+---
+
+## 16. MVP 2.0 Scope
+
+The next user-facing version should support:
+
+1. Natural-language intention input
+2. Target AI selection or detection
+3. Maximum three clarification questions
+4. Default assumptions
+5. One recommended Prompt
+6. Engineering task package
+7. Multi-AI collaboration package
+8. AGENT.md generation
+9. Integration Prompt
+10. Fix Prompt
+11. Acceptance Prompt
+12. Copy single artifact
+13. Copy all
+14. Export Markdown
+15. Technical details collapsed by default
+
+---
+
+## 17. Features Not Required Now
+
+Do not prioritize:
+
+* direct task execution
+* general chatbot conversations
+* model-generated final business documents
+* user accounts
+* subscription billing
+* payment
+* team workspace
 * Prompt marketplace
-* Browser extension
-* Mobile app
-* Vector database
-* RAG knowledge base
-* Complex agent orchestration
-* Fine-tuning pipeline
-* Cloud database requirement
-* Admin dashboard
-* Social sharing platform
-* Full competition management system
+* cloud Prompt history
+* full analytics dashboard
+* RAG
+* vector database
+* autonomous agents
+* plugin platform
+* mobile application
+* browser extension
+* complex database architecture
+* production multi-region deployment
 
-These can be considered after the MVP is stable.
-
----
-
-## Acceptable MVP Shortcuts
-
-The MVP may use:
-
-* Rule-based intent classification
-* Hardcoded templates
-* Local mock responses
-* LocalStorage history
-* Simple JSON-based templates
-* Rule-based prompt scoring
-* Static example inputs
-
-These are acceptable as long as the core product flow is complete.
+These may be considered only after product value is validated.
 
 ---
 
-## Quality Bar
+## 18. User-Facing Terminology
 
-Before considering a task complete, verify:
+Prefer:
 
-1. The project starts without errors.
-2. The homepage loads successfully.
-3. A user can input a Chinese short intent.
-4. The system returns structured intent analysis.
-5. The system detects missing information.
-6. The system generates at most 3 clarifying questions.
-7. The system generates 3 prompt versions.
-8. The user can copy generated prompts.
-9. The generated prompts are useful and readable.
-10. The README explains how to run the project.
+```text
+你的目标
+目标 AI
+推荐任务指令
+项目任务包
+协作任务包
+开发说明
+整合说明
+验收说明
+补充信息
+默认假设
+```
+
+Avoid emphasizing:
+
+```text
+Prompt Schema
+Prompt Compiler
+Few-shot
+Chain of Thought
+System Prompt
+Token
+Temperature
+Provider Status
+Rule Engine
+```
+
+The word “Prompt” may still be used because it is commonly understood, but the interface should focus on practical usage.
 
 ---
 
-## Demo Examples
+## 19. Key Product Metrics
 
-The project should support these test inputs:
+The primary metric is not Prompt length.
+
+Track:
+
+### User preparation time
+
+How long it takes from intention input to copying the final package.
+
+Target:
 
 ```text
-帮我写一个挑战杯项目计划书
+Simple task: under 30 seconds
+Engineering package: under 2 minutes
 ```
 
-```text
-帮我做一个 AI 编程社团的招新文案
-```
+### Clarification count
+
+Target:
 
 ```text
-帮我总结一篇关于具身智能的论文
+Simple task: 0–1
+Complex task: 1–3
 ```
 
-```text
-帮我设计一个关于大学生 AI 使用情况的调查问卷
-```
+### Editing effort
+
+Measure how much the user must modify before using the result.
+
+Target:
 
 ```text
-帮我拆解一个 prompt 生成器项目的开发需求
+Most users should only need to replace project-specific details.
 ```
 
-```text
-帮我做一个创新创业比赛的商业计划书大纲
-```
+### Package usage
+
+Measure:
+
+* recommended Prompt copied
+* AGENT.md copied
+* integration Prompt copied
+* acceptance Prompt copied
+* whole package exported
+
+### User usefulness
+
+Ask:
 
 ```text
-帮我生成一份社团活动策划案
+这份任务包是否减少了你整理需求和编写 Prompt 的时间？
 ```
 
-```text
-帮我把课程知识点整理成复习提纲
-```
+This is more important than asking whether the Prompt “looks professional.”
+
+---
+
+## 20. Demo Scenarios
+
+The product must be tested with at least these scenarios.
+
+### Scenario 1
 
 ```text
-帮我分析一份数据报告
+我想让 Codex 开发一个社团报名系统。
 ```
 
+Expected output:
+
+* recommended Codex Prompt
+* AGENT.md
+* test and acceptance requirements
+* optional fix Prompt
+
+### Scenario 2
+
 ```text
-帮我做一页项目路演 PPT 的内容结构
+我想让 Codex 和 Claude 一起开发一个 Prompt 生成器。
+```
+
+Expected output:
+
+* shared project definition
+* Codex Prompt
+* Claude Prompt
+* shared AGENT.md
+* integration Prompt
+* acceptance Prompt
+
+### Scenario 3
+
+```text
+帮我让 Claude 评审一个已有项目。
+```
+
+Expected output:
+
+* repository review Prompt
+* architecture review checklist
+* defect-report format
+* follow-up fix Prompt
+
+### Scenario 4
+
+```text
+帮我生成一篇微信公众号招新推送的 Prompt。
+```
+
+Expected output:
+
+* recommended writing Prompt
+* default audience and platform assumptions
+* optional revision Prompt
+
+### Scenario 5
+
+```text
+帮我生成一张高校科技社团招新海报的图片 Prompt。
+```
+
+Expected output:
+
+* image-generation Prompt
+* composition
+* style
+* aspect ratio
+* text hierarchy
+* negative constraints
+
+---
+
+## 21. Definition of Done
+
+A product change is complete only when:
+
+1. It reduces user preparation work.
+2. It supports the core Prompt or task-package workflow.
+3. It does not turn the product into a general chatbot.
+4. It does not add unnecessary user choices.
+5. It keeps technical details secondary.
+6. It produces directly reusable output.
+7. Existing core workflows still function.
+8. Tests pass.
+9. Lint passes.
+10. Build passes.
+11. Documentation reflects actual behavior.
+12. The final report honestly states unresolved issues.
+
+Required commands:
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+Do not claim completion before these checks pass.
+
+---
+
+## 22. Change Control Rules
+
+Before modifying the project:
+
+1. Read this `AGENT.md`.
+2. Inspect the actual repository.
+3. Review existing types and components.
+4. Preserve working features.
+5. Identify the smallest useful change.
+6. Avoid rewriting the whole architecture.
+7. Avoid introducing new dependencies without a clear reason.
+8. Avoid changing infrastructure unrelated to the user-facing goal.
+9. Update tests for changed behavior.
+10. Update README for major product changes.
+
+When requirements conflict, use this priority:
+
+```text
+Explicit current user request
+→ AGENT.md
+→ current working behavior
+→ existing documentation
+→ implementation convenience
 ```
 
 ---
 
-## Competition Positioning
+## 23. Final Product Principle
 
-When writing README, documentation, or project descriptions, use this positioning:
+The system should not attempt to do every task for the user.
 
-**Intent2Prompt is not a simple prompt beautifier. It is a Chinese intent-to-prompt compiler for student innovation scenarios. It builds a closed loop of intent analysis, missing information detection, structured prompt compilation, quality evaluation, and prompt asset reuse.**
+It should help the user prepare better instructions for the AI tools they already use.
 
-Chinese version:
+The final product experience should be:
 
-**Intent2Prompt 不是简单的提示词美化工具，而是一个面向中文学生创新场景的“意图到提示词编译器”。系统通过意图解析、缺失信息检测、结构化 Prompt 编译、质量评估和提示词资产管理，降低普通用户使用 AI 的表达门槛。**
-
----
-
-## Development Priority
-
-Follow this order:
-
-1. Build the static UI.
-2. Define TypeScript types.
-3. Implement rule-based intent analysis.
-4. Implement missing information detection.
-5. Implement clarifying question generation.
-6. Implement prompt schema builder.
-7. Implement prompt compiler.
-8. Implement mock API route.
-9. Implement copy and history features.
-10. Implement prompt evaluation.
-11. Improve templates.
-12. Add real LLM provider support later.
-
-Do not start with real LLM API integration before the mock flow is complete.
-
----
-
-## Final Reminder
-
-The goal is not to make the biggest system.
-
-The goal is to make a clear, runnable, demonstrable MVP that proves this idea:
-
-```text
-A short Chinese intention can be transformed into a structured, high-quality, reusable AI prompt.
-```
+> 用户说清楚大概想做什么，系统负责整理需求、补全结构、分配 AI 工作并生成可直接使用的任务包。
