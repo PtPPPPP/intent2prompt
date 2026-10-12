@@ -19,8 +19,8 @@ export function EvaluationCard({ evaluation }: EvaluationCardProps) {
     <section className="rounded-lg border border-line bg-white p-5 shadow-soft">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Prompt 质量评分</h2>
-          <p className="mt-1 text-sm text-slate-500">MVP 阶段使用规则评分，帮助判断 prompt 是否完整。</p>
+          <h2 className="text-lg font-semibold">结构检查（旧版生成结构）</h2>
+          <p className="mt-1 text-sm text-slate-500">规则指标只检查结构线索；分数增加或文本变长不代表效果提升，也不验证事实和语义。</p>
         </div>
         <div className="text-right">
           <p className="text-3xl font-bold text-accent">{evaluation.score}</p>

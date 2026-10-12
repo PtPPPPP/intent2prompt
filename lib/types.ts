@@ -123,6 +123,7 @@ export interface PromptVersion {
   title: string;
   description: string;
   content: string;
+  source?: import("./workbench").ModelSource;
 }
 
 export interface PromptEvaluation {
@@ -151,6 +152,8 @@ export interface GeneratePromptResult {
   evaluation: PromptEvaluation;
   providerStatus: ProviderStatus;
   providerMessage?: string;
+  modelSource?: import("./workbench").ModelSource;
+  optimization?: { available: boolean; message: string };
 }
 
 export interface PromptTemplate {

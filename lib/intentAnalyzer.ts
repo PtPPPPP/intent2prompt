@@ -6,7 +6,7 @@ import { evaluatePrompt } from "./promptEvaluator";
 import { getTemplate, getTemplateByInput } from "./templates";
 import type { GeneratePromptResult, IntentAnalysis, TaskType } from "./types";
 import { generateClarifyingQuestions } from "./questionGenerator";
-import { enhancePromptVersions } from "./llmClient";
+import { enhancePromptVersions, optimizationCapability } from "./llmClient";
 import { buildPromptPackage } from "./promptPackageBuilder";
 import type { GeneratePromptOptions } from "./types";
 
@@ -122,5 +122,7 @@ export async function generatePromptPackage(
     evaluation,
     providerStatus: providerResult.providerStatus,
     providerMessage: providerResult.providerMessage,
+    modelSource: enhancedRecommended?.source ?? providerResult.modelSource,
+    optimization: optimizationCapability(),
   };
 }

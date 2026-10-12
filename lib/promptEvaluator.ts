@@ -1,5 +1,20 @@
 import { EVAL_WEIGHTS, type PromptEvaluation, type PromptSchema, type PromptVersion } from "./types";
 
+export function inspectStructure(content: string): { present: string[]; issues: string[] } {
+  const checks: Array<[string, RegExp, string]> = [
+    ["任务目标", /目标|任务|请完成|请生成|请修复|请整合/, "缺少明确的任务目标。"],
+    ["背景", /背景|上下文|已知|原始意图/, "缺少背景或已知事实。"],
+    ["输出格式", /输出|产出|最终报告|交付/, "缺少输出格式或交付物说明。"],
+    ["约束", /不得|不要|禁止|不编造|不删除|约束|要求|边界/, "缺少明确约束。"],
+    ["验收标准", /验收|自检|完成条件|通过项|测试/, "缺少可核查的验收标准。"],
+  ];
+  const present: string[] = [], issues: string[] = [];
+  for (const [name, pattern, issue] of checks) { if (pattern.test(content)) present.push(name); else issues.push(issue); }
+  if (/待补充|未提供|未确认/.test(content)) issues.push("仍有未确认信息，请补充或核对默认假设。");
+  if (/(不得|不要|禁止)[^\n。；]*(部署|删除|新增依赖)[^\n]*[。；，,].*(必须|需要).*(部署|删除|新增依赖)/.test(content)) issues.push("可能存在相互冲突的约束，请人工核查。");
+  return { present, issues };
+}
+
 function clamp(score: number, max: number): number {
   return Math.max(0, Math.min(max, score));
 }

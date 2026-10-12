@@ -54,7 +54,7 @@ export function PromptPackageCard({ promptPackage }: PromptPackageCardProps) {
         </div>
       </div>
 
-      {recommended ? <pre className="mt-5 max-h-[480px] overflow-auto whitespace-pre-wrap rounded-md bg-slate-950 p-4 text-sm leading-6 text-slate-100">{recommended.content}</pre> : null}
+      {recommended ? <pre className="mt-5 max-h-[480px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-slate-950 p-4 text-sm leading-6 text-slate-100">{recommended.content}</pre> : null}
 
       <div className="mt-5 flex flex-wrap gap-2">
         <button type="button" onClick={() => copy("all", packageMarkdown(promptPackage))} className="rounded-md border border-line px-3 py-2 text-sm font-medium text-slate-700">{copiedId === "all" ? "已复制" : "复制整个任务包"}</button>

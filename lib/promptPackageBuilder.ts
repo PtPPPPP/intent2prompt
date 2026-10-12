@@ -35,7 +35,7 @@ function detectTargetTools(input: string, selected: TargetTool = "auto"): Target
   if (selected !== "auto") return [selected];
 
   const detected = toolPatterns
-    .filter(([, pattern]) => pattern.test(input))
+    .filter(([tool, pattern]) => pattern.test(input) && !(tool === "claude" && /claude\s*code/i.test(input) && !/claude(?!\s*code)/i.test(input)))
     .map(([tool]) => tool);
   return detected.length ? [...new Set(detected)] : ["general"];
 }
