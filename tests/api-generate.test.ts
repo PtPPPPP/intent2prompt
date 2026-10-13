@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/generate/route";
 import { resetRateLimitState } from "@/lib/rateLimit";
 
@@ -16,22 +16,16 @@ async function readJson(response: Response) {
   return response.json() as Promise<Record<string, unknown>>;
 }
 
-const originalProvider = process.env.LLM_PROVIDER;
-const originalDeepSeekKey = process.env.DEEPSEEK_API_KEY;
+beforeEach(() => {
+  vi.stubEnv("LLM_PROVIDER", "mock");
+  vi.stubEnv("LLM_ENABLED", "false");
+  vi.stubEnv("LLM_FORCE_RULE_MODE", "false");
+  vi.stubEnv("DEEPSEEK_API_KEY", "");
+  vi.stubEnv("RATE_LIMIT_STORE", "memory");
+});
 
 afterEach(() => {
-  if (originalProvider === undefined) {
-    delete process.env.LLM_PROVIDER;
-  } else {
-    process.env.LLM_PROVIDER = originalProvider;
-  }
-
-  if (originalDeepSeekKey === undefined) {
-    delete process.env.DEEPSEEK_API_KEY;
-  } else {
-    process.env.DEEPSEEK_API_KEY = originalDeepSeekKey;
-  }
-
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   resetRateLimitState();
 });
@@ -120,6 +114,7 @@ describe("POST /api/generate", () => {
 
   it("uses the rule-based flow in mock mode without calling a model", async () => {
     process.env.LLM_PROVIDER = "mock";
+    vi.stubEnv("LLM_ENABLED", "true");
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -133,6 +128,7 @@ describe("POST /api/generate", () => {
 
   it("falls back to the rule-based flow when DeepSeek is not configured", async () => {
     process.env.LLM_PROVIDER = "deepseek";
+    vi.stubEnv("LLM_ENABLED", "true");
     delete process.env.DEEPSEEK_API_KEY;
 
     const response = await POST(jsonRequest({ input: "帮我设计一个问卷" }));
@@ -145,6 +141,7 @@ describe("POST /api/generate", () => {
 
   it("falls back to the rule-based flow when DeepSeek returns an error", async () => {
     process.env.LLM_PROVIDER = "deepseek";
+    vi.stubEnv("LLM_ENABLED", "true");
     process.env.DEEPSEEK_API_KEY = "test-key";
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 })));
 
@@ -158,6 +155,7 @@ describe("POST /api/generate", () => {
 
   it("uses DeepSeek enhancement when a configured request succeeds", async () => {
     process.env.LLM_PROVIDER = "deepseek";
+    vi.stubEnv("LLM_ENABLED", "true");
     process.env.DEEPSEEK_API_KEY = "test-key";
     const enhancedPrompt = "润色后的 Prompt。".repeat(500);
     const fetchMock = vi.fn().mockImplementation(() =>
@@ -174,5 +172,24 @@ describe("POST /api/generate", () => {
     expect(response.status).toBe(200);
     expect(data.providerStatus).toBe("deepseek");
     expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it.each([
+    ["false", "false"],
+    ["true", "true"],
+  ])("does not call DeepSeek with LLM_ENABLED=%s and LLM_FORCE_RULE_MODE=%s", async (enabled, forceRuleMode) => {
+    vi.stubEnv("LLM_PROVIDER", "deepseek");
+    vi.stubEnv("LLM_ENABLED", enabled);
+    vi.stubEnv("LLM_FORCE_RULE_MODE", forceRuleMode);
+    vi.stubEnv("DEEPSEEK_API_KEY", "test-key");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(jsonRequest({ input: "帮我设计一个问卷" }));
+    const data = await readJson(response);
+
+    expect(response.status).toBe(200);
+    expect(data.providerStatus).toBe("mock");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
